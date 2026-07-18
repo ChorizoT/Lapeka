@@ -134,7 +134,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                 Spacer(Modifier.height(16.dp))
             }
             items(uiState.apps, key = { it.remote.id }) { app ->
-                if (app.remote.name.includeSearch(search)) {
+                if (app.remote.name.includeSearch(search) && (app.remote.id != "lapeka"  || app.status != AppStatus.UP_TO_DATE)) {
                     AppCard(
                         app = app,
                         onAction = { viewModel.installOrUpdate(app) })

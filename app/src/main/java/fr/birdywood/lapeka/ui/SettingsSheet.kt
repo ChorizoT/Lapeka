@@ -181,6 +181,7 @@ fun SettingsSheet(
                                 viewModel.refresh()
                                 delay(1000)
                                 buttonEnabled = true
+                                prefSystem.set("forceReload", false)
                             }
                         }
                     ) {
