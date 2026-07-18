@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
+    <string name="app_name" translatable="false">Lapeka</string>
+    <string name="item_latest_update">Latest update</string>
+    <string name="item_latest_version_code">Latest version code</string>
+    <string name="item_installed_version_code">Installed version code</string>
+    <string name="item_changelog">Changelog</string>
+    <string name="item_package">Package</string>
+    <string name="text_no_manifest_configured_yet">No manifest configured yet</string>
+    <string name="text_set_your_api_endpoint_to_start_tracking_apps">Set your API endpoint to start tracking apps.</string>
+    <string name="action_configure">Configure</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_save">Save</string>
+    <string name="action_account">You</string>
+    <string name="action_apps">Apps</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_edit">Edit</string>
+    <string name="state_installed">Installed: </string>
+    <string name="state_latest">Latest: </string>
+    <string name="action_open">Open</string>
+    <string name="state_downloading">Downloading…</string>
+    <string name="state_installing">Installing…</string>
+    <string name="action_retry">Retry</string>
+    <string name="state_not_installed">not installed</string>
+    <string name="action_install">Install</string>
+    <string name="action_update">Update</string>
+    <string name="state_up_to_date">Up to date</string>
+    <string name="text_api_url">API URL</string>
+    <string name="text_manifest_endpoint">Manifest endpoint</string>
+    <string name="text_connect_to_birdyauth">Connect to BirdyAuth</string>
+    <string name="text_log_in_to_manage_your_account_and_access_more_features">Log in to manage your account and access more features.</string>
+    <string name="action_login_with_birdyauth">Login with BirdyAuth</string>
+    <string name="version">Version</string>
+    <string name="error_title">Oops, something went wrong!</string>
+    <string name="error_message">It looks like you don’t have permission to access this app, or a technical issue occurred on our end.</string>
+    <string name="error_cta_title">What can you do?</string>
+    <string name="error_hint_1">Make sure you\'re logged in with the correct account.</string>
+    <string name="error_hint_2">Refresh the page in a few moments.</string>
+    <string name="error_btn_retry">Retry</string>
+    <string name="force_reload_danger">Search of new versions\n⚠️Danger</string>
+    <string name="action_search">Search</string>
+    <string name="dynamic_theme">Dynamic Theme</string>
+    <string name="settings_select_light">Light</string>
+    <string name="settings_select_dark">Dark</string>
+    <string name="settings_select_system_mode">System</string>
+    <string name="dark_mode">Dark mode</string>
+    <string name="credit">Credit</string>
+    <string name="build_with_love_by_birdywood">Built with ❤ by BirdyWood</string>
+    <string name="credit_app" translatable="false">2026 © BirdyWood</string>
+</resources>
