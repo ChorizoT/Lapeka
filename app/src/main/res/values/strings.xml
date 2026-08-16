@@ -48,4 +48,12 @@
     <string name="credit">Credit</string>
     <string name="build_with_love_by_birdywood">Built with ❤ by BirdyWood</string>
     <string name="credit_app" translatable="false">2026 © BirdyWood</string>
+    <string name="settings_title_update">Update</string>
+    <string name="settings_title_display">Display</string>
+    <string name="dynamic_theme_subtitle">Adapt colors to the system</string>
+    <string name="rechercher_des_nouvelles_versions">Search for new versions</string>
+    <string name="version_actuelle">Current version: %1$s</string>
+    <string name="app_homepage" translatable="false">https://lapeka.labs.birdywood.fr/</string>
+    <string name="share_message">Download the app here: \n%1$s</string>
+    <string name="share_title">Recommend the app to your friends and family</string>
 </resources>

@@ -11,12 +11,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,11 +72,26 @@ fun SettingsSheet(
         enabledValues =
             if (skipPartiallyExpanded) setOf(SheetValue.Hidden, SheetValue.Expanded)
             else setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded),
-        )
+    )
+
+    // State for the dark mode dialog
+    var showDarkModeDialog by remember { mutableStateOf(false) }
+    val darkModeOptions = listOf(
+        stringResource(R.string.settings_select_system_mode),
+        stringResource(R.string.settings_select_light),
+        stringResource(R.string.settings_select_dark)
+    )
+    val currentDarkMode = prefSystem.get(
+        "darkmode",
+        stringResource(R.string.settings_select_system_mode)
+    )
+    var selectedDarkModeOption by remember {
+        mutableStateOf(currentDarkMode)
+    }
 
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        LazyColumn(modifier = Modifier.padding(24.dp)) {
+        /*LazyColumn(modifier = Modifier.padding(24.dp)) {
             stickyHeader {
                 Column(
                     modifier = Modifier
@@ -85,7 +105,7 @@ fun SettingsSheet(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             }
-            item {
+            /*item {
                 Text(
                     stringResource(R.string.text_manifest_endpoint),
                     style = MaterialTheme.typography.bodyLarge,
@@ -140,7 +160,7 @@ fun SettingsSheet(
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-            }
+            }*/
             item {
                 ToggleSetting(
                     prefSystem,
@@ -196,7 +216,180 @@ fun SettingsSheet(
             item { SettingsRow(stringResource(R.string.credit)) { Text(stringResource(R.string.build_with_love_by_birdywood)) } }
             item { Text(stringResource(R.string.credit_app), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)}
 
+        }*/
+        val titleDisplay = stringResource(R.string.settings_title_display)
+        val titleUpdate = stringResource(R.string.settings_title_update)
+        LazyColumn(modifier = Modifier.padding(24.dp)) {
+            stickyHeader {
+                Text(
+                    text = stringResource(R.string.action_settings),
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            /*// --- SECTION RESEAU ---
+            SettingsSection(title = "Réseau & API") {
+                SettingsTextFieldTile(
+                    title = "Endpoint du manifeste",
+                    value = "https://lapeka.labs.birdywood.fr",
+                    onValueSave = { newUrl -> /* Sauvegarder dans vos préférences */ },
+                    label = "URL de l'API",
+                    icon = painterResource(R.drawable.cloud_24)
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }*/
+
+            // --- SECTION APPARENCE ---
+            SettingsSection(title = titleDisplay) {
+                var dynamicTheme by remember {
+                    mutableStateOf(
+                        prefSystem.get(
+                            "dynamicTheme",
+                            false
+                        )
+                    )
+                }
+                SettingsSwitchTile(
+                    title = stringResource(R.string.dynamic_theme),
+                    subtitle = stringResource(R.string.dynamic_theme_subtitle),
+                    checked = dynamicTheme,
+                    onCheckedChange = {
+                        dynamicTheme = it
+                        scope.launch {
+                            prefSystem.set("dynamicTheme", it)
+                            delay(200)
+                            onDismiss()
+                            activity?.recreate()
+                        }
+                    },
+                    icon = painterResource(R.drawable.palette_24)
+                )
+
+                SettingsTile(
+                    title = "Mode sombre",
+                    subtitle = selectedDarkModeOption,
+                    icon = painterResource(R.drawable.dark_mode_24),
+                    onClick = { showDarkModeDialog = true }
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+            // --- SECTION MISES À JOUR ---
+            SettingsSection(title = titleUpdate) {
+                var buttonEnabled = true
+                SettingsTile(
+                    title = stringResource(R.string.rechercher_des_nouvelles_versions),
+                    icon = painterResource(R.drawable.rounded_refresh_24),
+                    onClick = {
+                        if (buttonEnabled) {
+                            scope.launch {
+                                prefSystem.set("forceReload", true)
+                                buttonEnabled = false
+                                viewModel.refresh()
+                                delay(1000)
+                                prefSystem.set("forceReload", false)
+                                delay(5000)
+                                buttonEnabled = true
+                            }
+                        }
+                    }
+                )
+                SettingsTile(
+                    title = stringResource(R.string.version_actuelle, BuildConfig.VERSION_NAME),
+                    icon = painterResource(R.drawable.info_24),
+                    onClick = null
+                )
+            }
+
+            // --- FOOTER / A PROPOS ---
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.build_with_love_by_birdywood),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.credit_app),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
         }
+    }
+
+    if (showDarkModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showDarkModeDialog = false },
+            title = { Text(text = stringResource(R.string.dark_mode)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    darkModeOptions.forEach { text ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .selectable(
+                                    selected = (text == selectedDarkModeOption),
+                                    onClick = {
+                                        selectedDarkModeOption = text
+                                    },
+                                    role = Role.RadioButton
+                                )
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (text == selectedDarkModeOption),
+                                onClick = null // null recommended for accessibility with selectable modifier
+                            )
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDarkModeDialog = false
+                        scope.launch {
+                            prefSystem.set("darkmode", selectedDarkModeOption)
+                            // Small delay to allow sheet to start closing before recreate
+                            delay(200)
+                            activity?.recreate()
+                        }
+                    }
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDarkModeDialog = false
+                        selectedDarkModeOption = currentDarkMode // Reset on cancel
+                    }
+                ) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        )
     }
 }
 
@@ -306,3 +499,4 @@ fun SelectSetting(
         }
     }
 }
+

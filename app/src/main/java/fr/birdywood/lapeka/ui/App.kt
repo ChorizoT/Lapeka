@@ -1,5 +1,6 @@
 package fr.birdywood.lapeka.ui
 
+import android.content.Intent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
@@ -12,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,10 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "list"
+    val context = LocalContext.current
+    val downloadUrl = stringResource(R.string.app_homepage)
+    val shareMessage = stringResource(R.string.share_message, downloadUrl)
+    val shareTitle = stringResource(R.string.share_title)
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -75,6 +81,23 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             Icon(
                                 painterResource(R.drawable.rounded_refresh_24),
                                 contentDescription = stringResource(R.string.action_refresh)
+                            )
+                        }
+                        IconButton(onClick = {
+                            val sendIntent: Intent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT,
+                                    shareMessage
+                                )
+                                putExtra(Intent.EXTRA_TITLE, shareTitle)
+                                type = "text/plain"
+                            }
+                            val shareIntent = Intent.createChooser(sendIntent, null)
+                            context.startActivity(shareIntent)
+                        }) {
+                            Icon(
+                                painterResource(R.drawable.share_24),
+                                contentDescription = null
                             )
                         }
                         IconButton(onClick = { showSettings = true }) {

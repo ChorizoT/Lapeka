@@ -46,4 +46,11 @@
     <string name="dark_mode">Mode sombre</string>
     <string name="credit">Crédit</string>
     <string name="build_with_love_by_birdywood">Conçue avec ❤ par BirdyWood</string>
+    <string name="dynamic_theme_subtitle">Adapter les couleurs au système</string>
+    <string name="settings_title_update">Mises à jour</string>
+    <string name="settings_title_display">Apparence</string>
+    <string name="rechercher_des_nouvelles_versions">Rechercher des nouvelles versions</string>
+    <string name="version_actuelle">Version actuelle : %1$s</string>
+    <string name="share_message">Télécharge l\'application ici : \n%1$s</string>
+    <string name="share_title">Recommander l\'application à vos proches</string>
 </resources>

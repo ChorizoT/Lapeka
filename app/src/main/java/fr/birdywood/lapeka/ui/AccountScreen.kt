@@ -94,7 +94,11 @@ fun LoggedInView(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "${account.firstname} ${account.lastname}",
+                text = if (account.firstname == "" && account.lastname == "") {
+                    stringResource(R.string.action_account)
+                } else {
+                    "${account.firstname} ${account.lastname}"
+                },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )

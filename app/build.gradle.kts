@@ -14,8 +14,8 @@ android {
         applicationId = "fr.birdywood.lapeka"
         minSdk = 26
         targetSdk = 37
-        versionCode = 8
-        versionName = "1.0.8"
+        versionCode = 9
+        versionName = "1.1.0"
     }
 
     buildFeatures {
