@@ -43,6 +43,7 @@ class UpdateCheckWorker(
                     installer.install(
                         apkFile = downloadResult.file,
                         packageName = app.remote.packageName,
+                        appName = app.remote.name,
                         isUpdateOfOwnInstall = weAreInstallerOfRecord
                     )
                 }

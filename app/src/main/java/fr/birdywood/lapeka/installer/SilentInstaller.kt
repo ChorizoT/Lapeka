@@ -21,10 +21,12 @@ import java.io.File
  */
 class SilentInstaller(private val context: Context) {
     var lastPackageName: String = ""
+    var lastAppName: String = ""
 
-    fun install(apkFile: File, packageName: String, isUpdateOfOwnInstall: Boolean) {
+    fun install(apkFile: File, packageName: String, appName: String, isUpdateOfOwnInstall: Boolean) {
         val packageInstaller = context.packageManager.packageInstaller
         lastPackageName = packageName
+        lastAppName = appName
 
         val params = PackageInstaller.SessionParams(
             PackageInstaller.SessionParams.MODE_FULL_INSTALL
@@ -50,6 +52,7 @@ class SilentInstaller(private val context: Context) {
             val intent = Intent(context, InstallResultReceiver::class.java).apply {
                 action = ACTION_INSTALL_STATUS
                 putExtra(EXTRA_PACKAGE_NAME, packageName)
+                putExtra(EXTRA_APP_NAME, appName)
                 putExtra(EXTRA_FILE_PATH, apkFile.absolutePath)
             }
             val flags = PendingIntent.FLAG_UPDATE_CURRENT or
@@ -65,6 +68,7 @@ class SilentInstaller(private val context: Context) {
     companion object {
         const val ACTION_INSTALL_STATUS = "fr.birdywood.lapeka.INSTALL_STATUS"
         const val EXTRA_PACKAGE_NAME = "extra_package_name"
+        const val EXTRA_APP_NAME = "extra_app_name"
         const val EXTRA_FILE_PATH = "extra_file_path"
     }
 }

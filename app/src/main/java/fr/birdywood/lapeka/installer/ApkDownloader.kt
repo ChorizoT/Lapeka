@@ -6,7 +6,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import java.io.FileOutputStream
 import java.security.MessageDigest
 
 class ApkDownloader(
@@ -19,7 +18,12 @@ class ApkDownloader(
         data class Failure(val message: String) : Result()
     }
 
-    suspend fun download(url: String, fileName: String, expectedSha256: String?): Result =
+    suspend fun download(
+        url: String,
+        fileName: String,
+        expectedSha256: String?,
+        onProgress: (Int) -> Unit = {}
+    ): Result =
         withContext(Dispatchers.IO) {
             try {
                 val cacheDir = File(context.cacheDir, "apks").apply { mkdirs() }
@@ -31,8 +35,23 @@ class ApkDownloader(
                         return@withContext Result.Failure("HTTP ${response.code}")
                     }
                     val body = response.body ?: return@withContext Result.Failure("Empty response body")
-                    FileOutputStream(outFile).use { output ->
-                        body.byteStream().copyTo(output)
+                    val contentLength = body.contentLength()
+
+                    outFile.outputStream().use { output ->
+                        body.byteStream().use { input ->
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Long = 0
+                            var read: Int
+                            while (input.read(buffer).also { read = it } != -1) {
+                                output.write(buffer, 0, read)
+                                bytesRead += read
+                                if (contentLength > 0) {
+                                    val progress = ((bytesRead * 100) / contentLength).toInt()
+                                    onProgress(progress)
+                                }
+                            }
+                            onProgress(100)
+                        }
                     }
                 }
 

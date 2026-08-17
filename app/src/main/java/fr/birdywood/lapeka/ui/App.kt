@@ -42,6 +42,8 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "list"
     val context = LocalContext.current
+    val prefSystem = remember { fr.birdywood.lapeka.birdyauth.PreferenceSystem(context) }
+    var welcomeDone by remember { mutableStateOf(prefSystem.get("welcomeDone", false)) }
     val downloadUrl = stringResource(R.string.app_homepage)
     val shareMessage = stringResource(R.string.share_message, downloadUrl)
     val shareTitle = stringResource(R.string.share_title)
@@ -52,9 +54,12 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
         }
     }
 
-
-
-    if (uiStateAccount.account != null) {
+    if (!welcomeDone) {
+        WelcomeScreen(onGetStarted = {
+            prefSystem.set("welcomeDone", true)
+            welcomeDone = true
+        })
+    } else if (uiStateAccount.account != null) {
         Scaffold(
             modifier = Modifier
                 //.padding(WindowInsets.navigationBars.asPaddingValues())
@@ -161,9 +166,9 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             onRefresh = {
                                 coroutineScope.launch {
                                     isRefreshing = true
-                                    delay(1000)
+                                    delay(200)
                                     viewModel.refresh()
-                                    delay(2000)
+                                    delay(1000)
                                     isRefreshing = false
                                 }
                             },

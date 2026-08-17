@@ -17,8 +17,11 @@ class InstallResultReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_FAILURE
         )
         val packageName = intent.getStringExtra(SilentInstaller.EXTRA_PACKAGE_NAME)
+        val appName = intent.getStringExtra(SilentInstaller.EXTRA_APP_NAME) ?: ""
         val message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
         val filePath = intent.getStringExtra(SilentInstaller.EXTRA_FILE_PATH)
+
+        val notificationHelper = NotificationHelper(context)
 
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
@@ -33,11 +36,13 @@ class InstallResultReceiver : BroadcastReceiver() {
             PackageInstaller.STATUS_SUCCESS -> {
                 Log.i(TAG, "Install/update succeeded for $packageName")
                 InstallEventBus.emit(InstallEvent.Success(packageName ?: ""))
+                notificationHelper.showSuccessNotification(appName)
                 deleteFile(filePath)
             }
             else -> {
                 Log.e(TAG, "Install/update failed for $packageName: $message (status=$status)")
                 InstallEventBus.emit(InstallEvent.Failure(packageName ?: "", message ?: "Unknown error"))
+                notificationHelper.showErrorNotification(appName, message)
                 deleteFile(filePath)
             }
         }

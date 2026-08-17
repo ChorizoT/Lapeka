@@ -14,11 +14,11 @@ class AppsRepository(
     val birdyAuth = BirdyAuth(manifestConfig.context)
     val preferenceSystem = PreferenceSystem(manifestConfig.context)
 
-    suspend fun fetchTrackedApps(): List<TrackedApp> {
+    suspend fun fetchTrackedApps(forceReload: Boolean = false): List<TrackedApp> {
         require(manifestConfig.hasManifestUrl) { "Manifest URL is not configured" }
 
         //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
-        val option = if (preferenceSystem.get("forceReload", false) == true)"?force=true" else ""
+        val option = if (forceReload) "?force=true" else ""
         val remoteApps = birdyAuth.request<List<RemoteAppInfo>>("GET", manifestConfig.manifestUrl+option, "",true).getOrNull() ?: emptyList()
 
         return remoteApps.map { remote ->

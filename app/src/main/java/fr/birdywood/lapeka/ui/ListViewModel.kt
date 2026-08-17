@@ -11,6 +11,7 @@ import fr.birdywood.lapeka.data.TrackedApp
 import fr.birdywood.lapeka.installer.ApkDownloader
 import fr.birdywood.lapeka.installer.InstallEvent
 import fr.birdywood.lapeka.installer.InstallEventBus
+import fr.birdywood.lapeka.installer.NotificationHelper
 import fr.birdywood.lapeka.installer.SilentInstaller
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,7 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     )
     private val downloader = ApkDownloader(application)
     private val installer = SilentInstaller(application)
+    private val notificationHelper = NotificationHelper(application)
 
     private val _uiState = MutableStateFlow(
         AppListUiState(manifestUrl = manifestConfig.manifestUrl)
@@ -64,12 +66,12 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
         refresh()
     }
 
-    fun refresh() {
+    fun refresh(forceReload: Boolean = false) {
         if (!manifestConfig.hasManifestUrl) return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
-                val apps = repository.fetchTrackedApps()
+                val apps = repository.fetchTrackedApps(forceReload)
                 _uiState.value = _uiState.value.copy(isLoading = false, apps = apps)
             } catch (e: Exception) {
                 Log.e("Lapeka", e.message?: "Failed to fetch apps")
@@ -84,28 +86,36 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     fun installOrUpdate(app: TrackedApp) {
         viewModelScope.launch {
             updateAppStatus(app.remote.id, AppStatus.DOWNLOADING)
+            notificationHelper.showProgressNotification(app.remote.name, 0)
 
             val result = downloader.download(
                 url = app.remote.apkUrl,
                 fileName = "${app.remote.id}.apk",
-                expectedSha256 = app.remote.sha256
+                expectedSha256 = app.remote.sha256,
+                onProgress = { progress ->
+                    notificationHelper.showProgressNotification(app.remote.name, progress)
+                }
             )
 
             when (result) {
                 is ApkDownloader.Result.Success -> {
                     updateAppStatus(app.remote.id, AppStatus.INSTALLING)
+                    notificationHelper.showInstallingNotification(app.remote.name)
                     val weAreInstallerOfRecord = isInstallerOfRecord(app.remote.packageName)
                     installer.install(
                         apkFile = result.file,
                         packageName = app.remote.packageName,
+                        appName = app.remote.name,
                         isUpdateOfOwnInstall = weAreInstallerOfRecord
                     )
                 }
+
                 is ApkDownloader.Result.Failure -> {
                     _uiState.value = _uiState.value.copy(
                         errorMessage = "Download failed: ${result.message}"
                     )
                     updateAppStatus(app.remote.id, AppStatus.ERROR)
+                    notificationHelper.showErrorNotification(app.remote.name, result.message)
                 }
             }
         }

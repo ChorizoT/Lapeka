@@ -2,6 +2,7 @@ package fr.birdywood.lapeka.ui
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,8 +53,10 @@ import androidx.compose.ui.util.fastForEachIndexed
 import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.birdyauth.PreferenceSystem
+import fr.birdywood.lapeka.utils.openAppNotificationSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -218,22 +224,40 @@ fun SettingsSheet(
 
         }*/
         val titleDisplay = stringResource(R.string.settings_title_display)
+        val titleNetwork = stringResource(R.string.settings_title_network)
         val titleUpdate = stringResource(R.string.settings_title_update)
-        LazyColumn(modifier = Modifier.padding(24.dp)) {
+        val titleOther = stringResource(R.string.settings_title_other)
+        LazyColumn(modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp, top = 0.dp)) {
             stickyHeader {
-                Text(
-                    text = stringResource(R.string.action_settings),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
+                Row (modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 0.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.action_settings),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    IconButton(
+                        {
+                            onDismiss()
+                        },
+                        modifier = Modifier.align(Alignment.CenterVertically).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh)
+
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.rounded_close_24),
+                            contentDescription = "Close"
+                        )
+                    }
+                }
             }
 
-            /*// --- SECTION RESEAU ---
+            // --- SECTION RESEAU ---
             SettingsSection(title = "Réseau & API") {
                 SettingsTextFieldTile(
-                    title = "Endpoint du manifeste",
-                    value = "https://lapeka.labs.birdywood.fr",
-                    onValueSave = { newUrl -> /* Sauvegarder dans vos préférences */ },
+                    title = stringResource(R.string.text_manifest_endpoint),
+                    value = url,
+                    onValueSave = { newUrl -> url = newUrl ;if (newUrl.isNotBlank()) onSave(newUrl) },
                     label = "URL de l'API",
                     icon = painterResource(R.drawable.cloud_24)
                 )
@@ -241,7 +265,7 @@ fun SettingsSheet(
 
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }*/
+            }
 
             // --- SECTION APPARENCE ---
             SettingsSection(title = titleDisplay) {
@@ -289,19 +313,34 @@ fun SettingsSheet(
                     onClick = {
                         if (buttonEnabled) {
                             scope.launch {
-                                prefSystem.set("forceReload", true)
                                 buttonEnabled = false
-                                viewModel.refresh()
-                                delay(1000)
-                                prefSystem.set("forceReload", false)
-                                delay(5000)
+                                viewModel.refresh(true)
+                                delay(5000.milliseconds)
                                 buttonEnabled = true
                             }
                         }
                     }
                 )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+            // --- SECTION AUTRES ---
+            SettingsSection(title = titleOther) {
+                val context = LocalContext.current
                 SettingsTile(
-                    title = stringResource(R.string.version_actuelle, BuildConfig.VERSION_NAME),
+                    title = stringResource(R.string.notifications),
+                    subtitle = stringResource(R.string.notifications_subtitle),
+                    icon = painterResource(R.drawable.notifications_24),
+                    modifier = Modifier,
+                    onClick = {
+                        openAppNotificationSettings(context)
+                    }
+                )
+                SettingsTile(
+                    title = stringResource(R.string.version_actuelle),
+                    subtitle = BuildConfig.VERSION_NAME,
                     icon = painterResource(R.drawable.info_24),
                     onClick = null
                 )

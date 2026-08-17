@@ -1,66 +1,74 @@
 # Lapeka
 
-Android app (Kotlin + Jetpack Compose) that tracks other APKs — SimpMusic,
-your own BirdyWood apps — against a manifest endpoint you host, and
-installs/updates them.
+**Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that serves as a self-hosted app manager. It tracks your own APKs against a remote manifest and handles downloads and installations seamlessly.
+
+## Key Features
+
+- 🔐 **BirdyAuth Integration**: Secure access to your private manifest via BirdyWood's authentication system.
+- 📱 **Modern UI**: Full Material 3 implementation with support for **Dynamic Theming** and **Dark Mode**.
+- 🚀 **Silent Updates**: Uses the `PackageInstaller` session API for seamless updates without confirmation dialogs (Android 12+) (BROKEN).
+- 🔔 **Live Progress Notifications**: Track your app installations with a real-time progress bar in the system tray.
+- ✨ **Onboarding Flow**: Smooth welcome experience for new users with automated permission handling.
+- 🔍 **Search & Filter**: Quickly find and manage your tracked applications.
+- 🔄 **Pull-to-Refresh**: Easily update your app list with a simple swipe.
+- 🛠️ **Background Updates**: Automated version checking via WorkManager. (DEPRECATED)
 
 ## How it works
 
-1. You host an API endpoint returning a JSON array (see schema below).
-2. The app polls it (on open + every 6h via WorkManager) and compares
-   `versionCode` against what's installed on the device via `PackageManager`.
-3. On install/update, it downloads the APK, verifies SHA-256 if provided,
-   and installs via the `PackageInstaller` session API.
+1. **Authentication**: Sign in with your BirdyAuth account to access your personalized app list.
+2. **Manifest Tracking**: The app polls your configured JSON manifest endpoint and compares `versionCode` against installed packages.
+3. **Installation**: When you trigger an update or install, Lapeka downloads the APK, verifies the SHA-256 checksum, and initiates a `PackageInstaller` session.
 
-## Silent install behavior
+## Manifest JSON Schema
 
-- **First install of any package**: always shows one system confirmation
-  dialog. This is an Android platform requirement, not something the app
-  can bypass on arbitrary (non-Device-Owner) devices.
-- **Subsequent updates, Android 12+ (API 31+)**: silent, no dialog — as
-  long as this app was the one that performed the original install
-  (checked via `PackageManager.getInstallSourceInfo`).
-- **Android 11 and below**: every install/update shows the dialog.
-
-## Manifest JSON schema
+Your endpoint should return a JSON array with the following structure:
 
 ```json
 [
   {
-    "id": "simpmusic",
-    "name": "SimpMusic",
-    "packageName": "com.example.simpmusic",
+    "id": "app-id",
+    "name": "App Name",
+    "desc": "A short description of the app.",
+    "packageName": "com.example.app",
     "versionCode": 42,
-    "versionName": "1.4.2",
-    "apkUrl": "https://your-domain/apks/simpmusic-1.4.2.apk",
-    "sha256": "optional-but-recommended",
-    "changelog": "optional",
-    "iconUrl": "optional"
+    "versionName": "1.2.0",
+    "apkUrl": "https://your-domain/apks/app-1.2.0.apk",
+    "sha256": "sha256-checksum-for-verification",
+    "changelog": "https://link-to-changelog-or-text",
+    "iconUrl": "https://link-to-app-icon.png",
+    "lastUpdate": 1723886400
   }
 ]
 ```
 
-Set the endpoint URL in-app via the settings (gear icon) on first launch.
+## Configuration
+
+Set your manifest endpoint URL in the **Settings** section. You can also manage:
+- Dark Mode preferences (System, Light, Dark).
+- Dynamic Theming toggle.
+- System notification settings.
+- Manual cache refresh.
 
 ## Building
 
-Open in Android Studio (Koala+ recommended) and run, or from CLI:
+Open the project in **Android Studio (Ladybug or newer)**.
 
-```
+From CLI:
+```bash
 ./gradlew assembleDebug
 ```
 
-(Requires the Gradle wrapper — run `gradle wrapper` once if `gradlew` is
-missing, or open in Android Studio which generates it automatically.)
+## Future Improvements
 
-## Notes / next steps
+- **Local Caching (Room)**: Implement a local database to store the app manifest, allowing for instant loading and offline browsing.
+- **Dependency Injection**: Refactor the project to use **Hilt** for better modularity and easier unit testing.
+- **Detailed App Pages**: Create dedicated detail screens with screenshots, version history, and comprehensive permission lists.
+- **Adaptive Layouts**: Optimize the UI for larger screens (tablets, foldables, and desktop) using Navigation 3 scenes.
+- **Silent Update Fixes**: Refine the "Installer of Record" logic to improve the reliability of silent updates on Android 12+.
+- **Enhanced Background Worker**: Modernize the background update check to be more energy-efficient and provide better user notifications.
+- **Multi-Account Support**: Allow users to configure multiple manifest endpoints and switch between different BirdyAuth accounts.
 
-- No Room/DataStore for caching the app list yet — every refresh re-hits
-  the manifest endpoint. Fine for a personal-scale list; add caching if
-  the list grows large or the endpoint gets slow.
-- `QUERY_ALL_PACKAGES` is declared because tracked package names are
-  dynamic (come from your manifest, not known at compile time). This is
-  fine for sideloaded distribution; would need Play Store justification
-  if ever published there.
-- The launcher icon is a placeholder vector — swap in real artwork
-  whenever you're ready.
+## Credits
+
+Built with ❤️ by **BirdyWood**.
+2026 © BirdyWood

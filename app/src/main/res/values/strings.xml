@@ -52,8 +52,29 @@
     <string name="settings_title_display">Display</string>
     <string name="dynamic_theme_subtitle">Adapt colors to the system</string>
     <string name="rechercher_des_nouvelles_versions">Search for new versions</string>
-    <string name="version_actuelle">Current version: %1$s</string>
+    <string name="version_actuelle">Current version</string>
     <string name="app_homepage" translatable="false">https://lapeka.labs.birdywood.fr/</string>
     <string name="share_message">Download the app here: \n%1$s</string>
     <string name="share_title">Recommend the app to your friends and family</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Welcome to Lapeka</string>
+    <string name="welcome_desc">Your personal app manager. Track, download, and update your favorite tools easily.</string>
+    <string name="action_get_started">Get Started</string>
+    <string name="permission_notification_title">Stay Updated</string>
+    <string name="permission_notification_desc">Lapeka needs notification permission to show you the progress of your installations.</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Installations</string>
+    <string name="notification_channel_desc">Progress and status of app installations</string>
+    <string name="notification_downloading">Downloading %1$s</string>
+    <string name="notification_installing">Installing %1$s</string>
+    <string name="notification_success">Update Successful</string>
+    <string name="notification_success_desc">%1$s is now up to date.</string>
+    <string name="notification_failed">Update Failed</string>
+    <string name="notification_failed_desc">Could not install %1$s.</string>
+    <string name="settings_title_other">Others</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_subtitle">Manage permissions and alerts</string>
+    <string name="settings_title_network">Network &amp; API</string>
 </resources>

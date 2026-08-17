@@ -3,6 +3,10 @@ package fr.birdywood.lapeka.ui
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -67,7 +71,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
             contentPadding = PaddingValues(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            stickyHeader{
+            stickyHeader {
                 Spacer(Modifier.height(24.dp))
 
                 Box(
@@ -134,14 +138,19 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                 Spacer(Modifier.height(16.dp))
             }
             items(uiState.apps, key = { it.remote.id }) { app ->
-                if (app.remote.name.includeSearch(search) && (app.remote.id != "lapeka"  || app.status != AppStatus.UP_TO_DATE)) {
+                if (app.remote.name.includeSearch(search) && (app.remote.id != "lapeka" || app.status != AppStatus.UP_TO_DATE)) {
                     AppCard(
                         app = app,
                         onAction = { viewModel.installOrUpdate(app) })
                 }
             }
             item {
-                Spacer(Modifier.padding(WindowInsets.navigationBars.asPaddingValues().plus(PaddingValues(top=100.dp))))
+                Spacer(
+                    Modifier.padding(
+                        WindowInsets.navigationBars.asPaddingValues()
+                            .plus(PaddingValues(top = 100.dp))
+                    )
+                )
             }
         }
     }
@@ -149,12 +158,14 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
 }
 
 @Composable
-fun String.includeSearch(search:String): Boolean{
+fun String.includeSearch(search: String): Boolean {
     if (search == "") return true
     val parsed = search.split(" ").filter { it != "" }
 
     parsed.forEach {
-        if(this.lowercase(LocalLocale.current.platformLocale).contains(it.lowercase(LocalLocale.current.platformLocale))){
+        if (this.lowercase(LocalLocale.current.platformLocale)
+                .contains(it.lowercase(LocalLocale.current.platformLocale))
+        ) {
             return true
         }
     }
@@ -188,6 +199,12 @@ fun EmptyState(onConfigure: () -> Unit) {
 @Composable
 private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    val appCond = app.status == AppStatus.DOWNLOADING || app.status == AppStatus.INSTALLING
+    val sizeIcon by animateIntAsState(
+        targetValue = if (appCond) 28 else 52,
+        animationSpec = tween(durationMillis = 300),
+        label = "IntegerAnimation"
+    )
 
     Card(
         onClick = { expanded = !expanded },
@@ -202,16 +219,23 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
                     modifier = Modifier
                         .size(52.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    /*.background(MaterialTheme.colorScheme.secondaryContainer)*/,
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
                         model = app.remote.iconUrl,
                         contentDescription = null,
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(sizeIcon.dp)
                             .clip(CircleShape)
                     )
+
+                    androidx.compose.animation.AnimatedVisibility(visible = appCond,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                        ) {
+                        CircularWavyProgressIndicator()
+                    }
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -237,9 +261,9 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            AnimatedVisibility(visible = app.status == AppStatus.DOWNLOADING || app.status == AppStatus.INSTALLING) {
+            /*AnimatedVisibility(visible = app.status == AppStatus.DOWNLOADING || app.status == AppStatus.INSTALLING) {
                 AppProgressIndicator()
-            }
+            }*/
 
             AnimatedVisibility(visible = expanded) {
                 Column {

@@ -50,7 +50,28 @@
     <string name="settings_title_update">Mises à jour</string>
     <string name="settings_title_display">Apparence</string>
     <string name="rechercher_des_nouvelles_versions">Rechercher des nouvelles versions</string>
-    <string name="version_actuelle">Version actuelle : %1$s</string>
+    <string name="version_actuelle">Version actuelle</string>
     <string name="share_message">Télécharge l\'application ici : \n%1$s</string>
     <string name="share_title">Recommander l\'application à vos proches</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Bienvenue sur Lapeka</string>
+    <string name="welcome_desc">Votre gestionnaire d\'applications personnel. Suivez, téléchargez et mettez à jour vos outils facilement.</string>
+    <string name="action_get_started">Commencer</string>
+    <string name="permission_notification_title">Restez informé</string>
+    <string name="permission_notification_desc">Lapeka a besoin de l\'autorisation de notification pour vous montrer la progression de vos installations.</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Installations</string>
+    <string name="notification_channel_desc">Progression et statut des installations d\'applications</string>
+    <string name="notification_downloading">Téléchargement de %1$s</string>
+    <string name="notification_installing">Installation de %1$s</string>
+    <string name="notification_success">Mise à jour réussie</string>
+    <string name="notification_success_desc">%1$s est maintenant à jour.</string>
+    <string name="notification_failed">Échec de la mise à jour</string>
+    <string name="notification_failed_desc">Impossible d\'installer %1$s.</string>
+    <string name="settings_title_other">Autres</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_subtitle">Gérer les autorisations et alertes</string>
+    <string name="settings_title_network">Réseau &amp; API</string>
 </resources>
