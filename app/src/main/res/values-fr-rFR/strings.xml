@@ -74,4 +74,8 @@
     <string name="notifications">Notifications</string>
     <string name="notifications_subtitle">Gérer les autorisations et alertes</string>
     <string name="settings_title_network">Réseau &amp; API</string>
+    <string name="notif_update_text">Nouvelle mise à jour disponible</string>
+    <string name="channel_check_name">Mise à jour</string>
+    <string name="channel_check_description">Nouvelle mise à jour</string>
+    <string name="support">Support</string>
 </resources>

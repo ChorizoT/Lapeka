@@ -1,5 +1,7 @@
 package fr.birdywood.lapeka.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,6 +59,7 @@ import fr.birdywood.lapeka.utils.openAppNotificationSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -229,8 +232,10 @@ fun SettingsSheet(
         val titleOther = stringResource(R.string.settings_title_other)
         LazyColumn(modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp, top = 0.dp)) {
             stickyHeader {
-                Row (modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 0.dp),
+                Row (modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 0.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -241,7 +246,10 @@ fun SettingsSheet(
                         {
                             onDismiss()
                         },
-                        modifier = Modifier.align(Alignment.CenterVertically).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
 
                     ) {
                         Icon(
@@ -329,6 +337,7 @@ fun SettingsSheet(
             // --- SECTION AUTRES ---
             SettingsSection(title = titleOther) {
                 val context = LocalContext.current
+                val email = stringResource(R.string.email)
                 SettingsTile(
                     title = stringResource(R.string.notifications),
                     subtitle = stringResource(R.string.notifications_subtitle),
@@ -336,6 +345,23 @@ fun SettingsSheet(
                     modifier = Modifier,
                     onClick = {
                         openAppNotificationSettings(context)
+                    }
+                )
+                SettingsTile(
+                    title = stringResource(R.string.support),
+                    subtitle = email,
+                    icon = painterResource(R.drawable.support_agent_24),
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SENDTO).apply {
+                            data = "mailto:$email".toUri()
+                            putExtra(Intent.EXTRA_SUBJECT, "Support Application - v1.0.8")
+                        }
+
+                        if (intent.resolveActivity(context.packageManager) != null) {
+                            context.startActivity(intent)
+                        } else {
+                            context.startActivity(Intent.createChooser(intent, "Envoyer un e-mail via..."))
+                        }
                     }
                 )
                 SettingsTile(

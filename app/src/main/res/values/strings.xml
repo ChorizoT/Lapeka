@@ -77,4 +77,9 @@
     <string name="notifications">Notifications</string>
     <string name="notifications_subtitle">Manage permissions and alerts</string>
     <string name="settings_title_network">Network &amp; API</string>
+    <string name="channel_check_name">Update</string>
+    <string name="channel_check_description">New update</string>
+    <string name="email" translatable="false">support@birdywood.fr</string>
+    <string name="notif_update_text">New update available</string>
+    <string name="support">Support</string>
 </resources>
