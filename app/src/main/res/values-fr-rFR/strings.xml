@@ -78,4 +78,6 @@
     <string name="channel_check_name">Mise à jour</string>
     <string name="channel_check_description">Nouvelle mise à jour</string>
     <string name="support">Support</string>
+    <string name="alertdialog_updated">Lapeka est à jour</string>
+    <string name="alertdialog_updated_desc">Vous utilisez maintenant la version %1$s.</string>
 </resources>

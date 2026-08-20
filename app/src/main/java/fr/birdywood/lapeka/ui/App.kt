@@ -1,6 +1,7 @@
 package fr.birdywood.lapeka.ui
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
@@ -23,11 +24,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
+import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.ui.theme.DefaultGradient
 import fr.birdywood.lapeka.ui.theme.GradientBackgroundBrush
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import fr.birdywood.lapeka.R
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -44,9 +47,14 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val context = LocalContext.current
     val prefSystem = remember { fr.birdywood.lapeka.birdyauth.PreferenceSystem(context) }
     var welcomeDone by remember { mutableStateOf(prefSystem.get("welcomeDone", false)) }
+    val lastVersionCode = remember { prefSystem.get("lastVersionCode", -1) }
     val downloadUrl = stringResource(R.string.app_homepage)
     val shareMessage = stringResource(R.string.share_message, downloadUrl)
     val shareTitle = stringResource(R.string.share_title)
+
+    var showDialog by remember {
+        mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE || true)
+    }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
@@ -91,7 +99,8 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                         IconButton(onClick = {
                             val sendIntent: Intent = Intent().apply {
                                 action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT,
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
                                     shareMessage
                                 )
                                 putExtra(Intent.EXTRA_TITLE, shareTitle)
@@ -166,9 +175,9 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             onRefresh = {
                                 coroutineScope.launch {
                                     isRefreshing = true
-                                    delay(200)
+                                    delay(200.milliseconds)
                                     viewModel.refresh()
-                                    delay(1000)
+                                    delay(1000.milliseconds)
                                     isRefreshing = false
                                 }
                             },
@@ -216,6 +225,25 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                 showSettings = false
             }
         )
+    }
+    if (showDialog) {
+        WhatsNewDialog(
+            versionName = BuildConfig.VERSION_NAME,
+            onDismiss = {
+                showDialog = false; scope.launch {
+                prefSystem.set(
+                    "lastVersionCode",
+                    BuildConfig.VERSION_CODE
+                )
+            }
+            }
+        )
+    }
+    LaunchedEffect(lastVersionCode) {
+        Log.d("Lapeka", "lastVersionCode: $lastVersionCode")
+        if (lastVersionCode == -1) {
+            prefSystem.set("lastVersionCode", BuildConfig.VERSION_CODE)
+        }
     }
 
 }
