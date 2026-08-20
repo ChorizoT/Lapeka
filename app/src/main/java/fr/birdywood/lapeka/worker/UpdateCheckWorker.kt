@@ -22,8 +22,6 @@ import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.data.AppStatus
 import fr.birdywood.lapeka.data.AppsRepository
 import fr.birdywood.lapeka.data.ManifestConfig
-import fr.birdywood.lapeka.installer.ApkDownloader
-import fr.birdywood.lapeka.installer.SilentInstaller
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -100,7 +98,7 @@ class UpdateCheckWorker(
     private fun isInstallerOfRecord(packageName: String): Boolean {
         return try {
             val pm = applicationContext.packageManager
-            val installerPackage = if (android.os.Build.VERSION.SDK_INT >= 30) {
+            val installerPackage = if (Build.VERSION.SDK_INT >= 30) {
                 pm.getInstallSourceInfo(packageName).installingPackageName
             } else {
                 @Suppress("DEPRECATION")

@@ -8,29 +8,64 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.plus
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -38,21 +73,16 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.data.AppStatus
 import fr.birdywood.lapeka.data.TrackedApp
 import java.text.DateFormat.getDateInstance
 import java.util.Date
-import fr.birdywood.lapeka.R
-import kotlinx.coroutines.launch
-import java.util.Locale
-import java.util.Locale.getDefault
-import androidx.compose.ui.platform.LocalLocale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -217,10 +247,11 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                val clip = if (appCond) CircleShape else RoundedCornerShape(10.dp)
                 Box(
                     modifier = Modifier
                         .size(52.dp)
-                        .clip(CircleShape)
+                        .clip(clip)
                     /*.background(MaterialTheme.colorScheme.secondaryContainer)*/,
                     contentAlignment = Alignment.Center
                 ) {
@@ -229,13 +260,14 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
                         contentDescription = null,
                         modifier = Modifier
                             .size(sizeIcon.dp)
-                            .clip(CircleShape)
+                            .clip(clip)
                     )
 
-                    androidx.compose.animation.AnimatedVisibility(visible = appCond,
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = appCond,
                         enter = fadeIn(),
                         exit = fadeOut()
-                        ) {
+                    ) {
                         CircularWavyProgressIndicator()
                     }
                 }
@@ -349,7 +381,14 @@ private fun DetailRow(label: String, value: String) {
 private fun StatusAction(app: TrackedApp, onAction: () -> Unit) {
     when (app.status) {
         AppStatus.NOT_INSTALLED -> Button(onClick = onAction) { Text(stringResource(R.string.action_install)) }
-        AppStatus.UPDATE_AVAILABLE -> Button(onClick = onAction) { Text(stringResource(R.string.action_update)) }
+        AppStatus.UPDATE_AVAILABLE -> Button(
+            onClick = onAction,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+        ) { Text(stringResource(R.string.action_update)) }
+
         AppStatus.UP_TO_DATE -> {
             val context = LocalContext.current
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -383,7 +422,12 @@ private fun StatusAction(app: TrackedApp, onAction: () -> Unit) {
             style = MaterialTheme.typography.labelMedium
         )
 
-        AppStatus.ERROR -> Button(onClick = onAction) { Text(stringResource(R.string.action_retry)) }
+        AppStatus.ERROR -> Button(
+            onClick = onAction, colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        ) { Text(stringResource(R.string.action_retry)) }
     }
 }
 

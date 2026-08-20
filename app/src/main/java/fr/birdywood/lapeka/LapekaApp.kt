@@ -2,14 +2,11 @@ package fr.birdywood.lapeka
 
 import android.app.Application
 import android.util.Log
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.Constraints
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequest
-import androidx.work.OneTimeWorkRequestBuilder
 import fr.birdywood.lapeka.worker.UpdateCheckWorker
 import java.util.concurrent.TimeUnit
 

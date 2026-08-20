@@ -1,65 +1,67 @@
 package fr.birdywood.lapeka.ui
 
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.*
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
-import fr.birdywood.lapeka.R
+import androidx.core.net.toUri
 import fr.birdywood.lapeka.BuildConfig
+import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.birdyauth.PreferenceSystem
 import fr.birdywood.lapeka.utils.openAppNotificationSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
-import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -261,12 +263,12 @@ fun SettingsSheet(
             }
 
             // --- SECTION RESEAU ---
-            SettingsSection(title = "Réseau & API") {
+            SettingsSection(title = titleNetwork) {
                 SettingsTextFieldTile(
                     title = stringResource(R.string.text_manifest_endpoint),
                     value = url,
                     onValueSave = { newUrl -> url = newUrl ;if (newUrl.isNotBlank()) onSave(newUrl) },
-                    label = "URL de l'API",
+                    label = stringResource(R.string.text_api_url),
                     icon = painterResource(R.drawable.cloud_24)
                 )
             }
@@ -293,7 +295,7 @@ fun SettingsSheet(
                         dynamicTheme = it
                         scope.launch {
                             prefSystem.set("dynamicTheme", it)
-                            delay(200)
+                            delay(200.milliseconds)
                             onDismiss()
                             activity?.recreate()
                         }
@@ -302,7 +304,7 @@ fun SettingsSheet(
                 )
 
                 SettingsTile(
-                    title = "Mode sombre",
+                    title = stringResource(R.string.dark_mode),
                     subtitle = selectedDarkModeOption,
                     icon = painterResource(R.drawable.dark_mode_24),
                     onClick = { showDarkModeDialog = true }
@@ -436,7 +438,7 @@ fun SettingsSheet(
                         scope.launch {
                             prefSystem.set("darkmode", selectedDarkModeOption)
                             // Small delay to allow sheet to start closing before recreate
-                            delay(200)
+                            delay(200.milliseconds)
                             activity?.recreate()
                         }
                     }
