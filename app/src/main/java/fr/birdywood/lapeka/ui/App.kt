@@ -53,7 +53,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val shareTitle = stringResource(R.string.share_title)
 
     var showDialog by remember {
-        mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE || true)
+        mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE)
     }
 
     LaunchedEffect(uiState.errorMessage) {
