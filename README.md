@@ -15,6 +15,10 @@
 
 **Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that an app that allows you to install and update apps from APKs.
 
+## Download
+
+You can download the app's APK on the homepage : [https://lapeka.labs.birdywood.fr](https://lapeka.labs.birdywood.fr).
+
 ## Key Features
 
 - **BirdyAuth Integration**: Secure access to your private manifest via BirdyWood's authentication system.
