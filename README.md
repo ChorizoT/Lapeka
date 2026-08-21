@@ -1,4 +1,17 @@
-# Lapeka
+<div align="center">
+
+```
+░██                                          ░██                  
+░██                                          ░██                  
+░██          ░██████   ░████████   ░███████  ░██    ░██ ░██████   
+░██               ░██  ░██    ░██ ░██    ░██ ░██   ░██       ░██  
+░██          ░███████  ░██    ░██ ░█████████ ░███████   ░███████  
+░██         ░██   ░██  ░███   ░██ ░██        ░██   ░██ ░██   ░██  
+░██████████  ░█████░██ ░██░█████   ░███████  ░██    ░██ ░█████░██ 
+                       ░██                                        
+                       ░██                                        
+```
+</div>
 
 **Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that serves as a self-hosted app manager. It tracks your own APKs against a remote manifest and handles downloads and installations seamlessly.
 
