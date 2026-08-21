@@ -80,4 +80,5 @@
     <string name="support">Support</string>
     <string name="alertdialog_updated">Lapeka est à jour</string>
     <string name="alertdialog_updated_desc">Vous utilisez maintenant la version %1$s.</string>
+    <string name="github_repository">Dépot GitHub du projet</string>
 </resources>

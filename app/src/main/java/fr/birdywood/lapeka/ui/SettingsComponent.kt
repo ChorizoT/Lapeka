@@ -129,24 +129,35 @@ fun SettingsTextFieldTile(
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
-                value = textState,
-                onValueChange = { textState = it },
-                label = { Text(label) },
-                singleLine = true,
-                modifier = Modifier.weight(1f),
-                trailingIcon = {
-                    if (isChanged) {
-                        IconButton(onClick = { onValueSave(textState) }) {
+            if (isChanged) {
+                OutlinedTextField(
+                    value = textState,
+                    onValueChange = { textState = it },
+                    label = { Text(label) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { onValueSave(textState) },
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        ) {
                             Icon(
-                                painterResource(R.drawable.rounded_check_24),
+                                painterResource(R.drawable.rounded_save_24),
                                 contentDescription = "Enregistrer",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
-                }
-            )
+                )
+            }else{
+                OutlinedTextField(
+                    value = textState,
+                    onValueChange = { textState = it },
+                    label = { Text(label) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 package fr.birdywood.lapeka.ui
 
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -347,6 +348,15 @@ fun SettingsSheet(
                     modifier = Modifier,
                     onClick = {
                         openAppNotificationSettings(context)
+                    }
+                )
+                SettingsTile(
+                    title = stringResource(R.string.github_repository),
+                    icon = painterResource(R.drawable.github_brands_solid_ful),
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW,
+                            "https://github.com/ChorizoT/Lapeka".toUri())
+                        context.startActivity(intent)
                     }
                 )
                 SettingsTile(
