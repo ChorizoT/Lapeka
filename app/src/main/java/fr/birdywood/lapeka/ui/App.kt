@@ -183,16 +183,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             },
                         ) {
                             when {
-                                uiState.isLoading -> {
-                                    Box(
-                                        Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        ContainedLoadingIndicator()
-                                    }
-                                }
-
-                                uiState.apps.isEmpty() -> {
+                                uiState.apps.isEmpty() && !uiState.isLoadingApps -> {
                                     EmptyState(onConfigure = { showSettings = true })
                                 }
 

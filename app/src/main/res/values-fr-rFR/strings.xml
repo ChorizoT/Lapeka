@@ -12,7 +12,7 @@
     <string name="action_settings">Paramètres</string>
     <string name="action_save">Enregistrer</string>
     <string name="action_account">Vous</string>
-    <string name="action_apps">Applications</string>
+    <string name="action_apps">Apps</string>
     <string name="action_logout">Déconnexion</string>
     <string name="action_edit">Modifier</string>
     <string name="state_installed">Installée : </string>
@@ -81,4 +81,6 @@
     <string name="alertdialog_updated">Lapeka est à jour</string>
     <string name="alertdialog_updated_desc">Vous utilisez maintenant la version %1$s.</string>
     <string name="github_repository">Dépot GitHub du projet</string>
+    <string name="featured_apps">Apps sélectionnées</string>
+    <string name="featured_apps_subtitle">Afficher les apps de BirdyWood</string>
 </resources>

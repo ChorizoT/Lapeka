@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import fr.birdywood.lapeka.data.AppStatus
 import fr.birdywood.lapeka.data.AppsRepository
+import fr.birdywood.lapeka.data.FeaturedApp
 import fr.birdywood.lapeka.data.ManifestConfig
 import fr.birdywood.lapeka.data.TrackedApp
 import fr.birdywood.lapeka.installer.ApkDownloader
@@ -19,10 +20,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class AppListUiState(
-    val isLoading: Boolean = false,
+    val isLoadingApps: Boolean = false,
     val apps: List<TrackedApp> = emptyList(),
+    val featuredApps: List<FeaturedApp> = emptyList(),
+    val isLoadingFeaturedApps: Boolean = false,
     val errorMessage: String? = null,
-    val manifestUrl: String = ""
+    val manifestUrl: String = "",
+    val showFeaturedApps: Boolean = true
 )
 
 class ListViewModel(application: Application) : AndroidViewModel(application) {
@@ -35,6 +39,7 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     private val downloader = ApkDownloader(application)
     private val installer = SilentInstaller(application)
     private val notificationHelper = NotificationHelper(application)
+    private val pref = repository.preferenceSystem
 
     private val _uiState = MutableStateFlow(
         AppListUiState(manifestUrl = manifestConfig.manifestUrl)
@@ -58,6 +63,12 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         if (manifestConfig.hasManifestUrl) refresh()
+        if (pref.get("show_featured_apps", true)){
+            getFeaturedApp()
+        }else{
+            _uiState.value = _uiState.value.copy(showFeaturedApps = false)
+        }
+
     }
 
     fun setManifestUrl(url: String) {
@@ -69,15 +80,31 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     fun refresh(forceReload: Boolean = false) {
         if (!manifestConfig.hasManifestUrl) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoadingApps = true, errorMessage = null)
             try {
                 val apps = repository.fetchTrackedApps(forceReload)
-                _uiState.value = _uiState.value.copy(isLoading = false, apps = apps)
+                _uiState.value = _uiState.value.copy(isLoadingApps = false, apps = apps)
             } catch (e: Exception) {
                 Log.e("Lapeka", e.message?: "Failed to fetch apps")
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
+                    isLoadingApps = false,
                     errorMessage = e.message ?: "Failed to fetch apps"
+                )
+            }
+        }
+    }
+
+    fun getFeaturedApp(){
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingFeaturedApps = true, errorMessage = null)
+            try {
+                val apps = repository.fetchFeaturedApps()
+                _uiState.value = _uiState.value.copy(isLoadingFeaturedApps = false, featuredApps = apps)
+            } catch (e: Exception) {
+                Log.e("Lapeka", e.message?: "Failed to fetch featured apps")
+                _uiState.value = _uiState.value.copy(
+                    isLoadingFeaturedApps = false,
+                    errorMessage = e.message ?: "Failed to fetch featured apps"
                 )
             }
         }

@@ -1,7 +1,6 @@
 package fr.birdywood.lapeka.ui
 
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -271,6 +270,29 @@ fun SettingsSheet(
                     onValueSave = { newUrl -> url = newUrl ;if (newUrl.isNotBlank()) onSave(newUrl) },
                     label = stringResource(R.string.text_api_url),
                     icon = painterResource(R.drawable.cloud_24)
+                )
+                var show_featured_apps by remember {
+                    mutableStateOf(
+                        prefSystem.get(
+                            "show_featured_apps",
+                            true
+                        )
+                    )
+                }
+                SettingsSwitchTile(
+                    title = stringResource(R.string.featured_apps),
+                    subtitle = stringResource(R.string.featured_apps_subtitle),
+                    checked = show_featured_apps,
+                    onCheckedChange = {
+                        show_featured_apps = it
+                        scope.launch {
+                            prefSystem.set("show_featured_apps", it)
+                            delay(200.milliseconds)
+                            onDismiss()
+                            activity?.finish()
+                        }
+                    },
+                    icon = painterResource(R.drawable.editor_choice_24)
                 )
             }
 

@@ -85,4 +85,6 @@
     <string name="alertdialog_updated">Lapeka is up to date</string>
     <string name="alertdialog_updated_desc">You are now using version %1$s.</string>
     <string name="github_repository">Project GitHub Repository</string>
+    <string name="featured_apps">Featured apps</string>
+    <string name="featured_apps_subtitle">Show BirdyWood\'s app</string>
 </resources>

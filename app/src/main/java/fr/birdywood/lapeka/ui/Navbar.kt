@@ -10,13 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -57,8 +57,8 @@ fun Navbar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ToolbarTextIconButton(
                         label = stringResource(R.string.action_apps),
-                        icon = painterResource(R.drawable.rounded_apps_24),
-                        selectedIcon = painterResource(R.drawable.rounded_apps_24),
+                        icon = painterResource(R.drawable.list_alt_24),
+                        selectedIcon = painterResource(R.drawable.list_alt_fill_24),
                         selected = currentRoute == "list",
                         onClick = { onClick("list") }
                     )
@@ -148,6 +148,7 @@ fun ToolbarTextIconButton(
             // Pill-shaped indicator that fades in when selected
             Box(
                 modifier = Modifier
+                    .defaultMinSize(minWidth = 72.dp)
                     .clip(MaterialTheme.shapes.extraLarge) // fully-rounded pill
                     .background(containerColor)
                     .padding(horizontal = 16.dp, vertical = pillVerticalPadding),

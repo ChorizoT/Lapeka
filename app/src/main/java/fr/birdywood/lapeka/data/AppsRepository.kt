@@ -19,7 +19,12 @@ class AppsRepository(
 
         //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
         val option = if (forceReload) "?force=true" else ""
-        val remoteApps = birdyAuth.request<List<RemoteAppInfo>>("GET", manifestConfig.manifestUrl+option, "",true).getOrNull() ?: emptyList()
+        val remoteApps = birdyAuth.request<List<RemoteAppInfo>>(
+            "GET",
+            manifestConfig.manifestUrl + option,
+            "",
+            true
+        ).getOrNull() ?: emptyList()
 
         return remoteApps.map { remote ->
             val installed = getInstalledPackageInfo(remote.packageName)
@@ -29,6 +34,7 @@ class AppsRepository(
                 installed == null -> AppStatus.NOT_INSTALLED
                 installedVersionCode != null && installedVersionCode < remote.versionCode ->
                     AppStatus.UPDATE_AVAILABLE
+
                 else -> AppStatus.UP_TO_DATE
             }
 
@@ -40,6 +46,18 @@ class AppsRepository(
             )
         }
 
+    }
+
+    suspend fun fetchFeaturedApps(): List<FeaturedApp> {
+        //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
+        val apps = birdyAuth.request<List<FeaturedApp>>(
+            "GET",
+            "https://vps.birdywood.fr/project/projects.json",
+            "",
+            false
+        ).getOrNull() ?: emptyList()
+
+        return apps.filter { it.img != "" && !it.img.substringBefore('?').substringBefore('#').substringAfterLast('.', "").equals("svg", ignoreCase = true)} //Exclude apps without image and apps with image in SVG
     }
 
     private fun getInstalledPackageInfo(packageName: String): PackageInfo? {
