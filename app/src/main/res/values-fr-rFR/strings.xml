@@ -81,7 +81,7 @@
     <string name="alertdialog_updated">Lapeka est à jour</string>
     <string name="alertdialog_updated_desc">Vous utilisez maintenant la version %1$s.</string>
     <string name="github_repository">Dépot GitHub du projet</string>
-    <string name="featured_apps">Apps sélectionnées</string>
+    <string name="featured_apps">Mes créations</string>
     <string name="featured_apps_subtitle">Afficher les apps de BirdyWood</string>
     <string name="github_changelog">Journal des modifications</string>
 </resources>

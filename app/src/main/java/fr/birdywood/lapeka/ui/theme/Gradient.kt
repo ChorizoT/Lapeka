@@ -28,6 +28,6 @@ fun DefaultGradient(): List<Color> {
     return listOf(
         MaterialTheme.colorScheme.surface,
         MaterialTheme.colorScheme.surface,
-        MaterialTheme.colorScheme.surfaceDim
+        //MaterialTheme.colorScheme.surfaceDim
     )
 }

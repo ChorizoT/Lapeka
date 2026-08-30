@@ -83,6 +83,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -93,6 +95,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -199,26 +202,47 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                 }
                 Spacer(Modifier.height(16.dp))
             }
+            if (uiState.isLoadingApps) {
+                item {
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ContainedLoadingIndicator()
+                    }
+                }
+            } else {
+                items(uiState.apps.filter {
+                    (it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(search))
+                                          /*&& (app.remote.id != "lapeka" || app.status != AppStatus.UP_TO_DATE)*/
+                }, key = { it.remote.id }) { app ->
+                    AppCard(
+                        app = app,
+                        onAction = { viewModel.installOrUpdate(app) })
+                }
+            }
             item {
                 AnimatedVisibility(
-                    search == "" && uiState.showFeaturedApps,
+                    search == "" && uiState.showFeaturedApps && !uiState.isLoadingFeaturedApps,
                     enter = slideInVertically(initialOffsetY = { -it }) + expandVertically(),
                     exit = slideOutVertically(targetOffsetY = { -it }) + shrinkVertically()
                 ) {
-                    Column {
-
-                        Text(stringResource(R.string.featured_apps), style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(4.dp))
-                        if (uiState.isLoadingFeaturedApps) {
-                            Box(
-                                Modifier
-                                    .height(220.dp)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                ContainedLoadingIndicator()
-                            }
-                        } else {
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        ),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(
+                                stringResource(R.string.featured_apps),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(Modifier.height(8.dp))
                             FeaturedAppsCarouselSection(uiState.featuredApps) { id ->
                                 val app = uiState.featuredApps.find { it.id == id }
                                 if (app != null) {
@@ -231,58 +255,31 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                                 }
                             }
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Text(stringResource(R.string.action_apps), style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
-            if (uiState.isLoadingApps) {
-                item {
-                    Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ContainedLoadingIndicator()
-                    }
-                }
-            } else {
-                items(uiState.apps, key = { it.remote.id }) { app ->
-                    if ((app.remote.packageName.includeSearch(search) || app.remote.name.includeSearch(
-                            search
-                        )) /*&& (app.remote.id != "lapeka" || app.status != AppStatus.UP_TO_DATE)*/) {
-                        AppCard(
-                            app = app,
-                            onAction = { viewModel.installOrUpdate(app) })
-                    }
-                }
-                item {
-                    Spacer(
-                        Modifier.padding(
-                            WindowInsets.navigationBars.asPaddingValues()
-                                .plus(PaddingValues(top = 100.dp))
-                        )
+            item {
+                Spacer(
+                    Modifier.padding(
+                        WindowInsets.navigationBars.asPaddingValues()
+                            .plus(PaddingValues(top = 100.dp))
                     )
-                }
+                )
             }
         }
     }
 
 }
 
-@Composable
+/**
+ * Returns true if the string contains any of the words in the search query (case-insensitive).
+ */
 fun String.includeSearch(search: String): Boolean {
-    if (search == "") return true
-    val parsed = search.split(" ").filter { it != "" }
-
-    parsed.forEach {
-        if (this.lowercase(LocalLocale.current.platformLocale)
-                .contains(it.lowercase(LocalLocale.current.platformLocale))
-        ) {
-            return true
-        }
-    }
-    return false
+    if (search.isBlank()) return true
+    val words = search.split("\\s+".toRegex()).filter { it.isNotBlank() }
+    return words.any { this.contains(it, ignoreCase = true) }
 }
+
 
 @Composable
 fun EmptyState(onConfigure: () -> Unit) {
@@ -532,6 +529,7 @@ fun FeaturedAppsCarouselSection(
                 .maskClip(MaterialTheme.shapes.extraLarge),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -555,7 +553,9 @@ fun FeaturedAppsCarouselSection(
                                 )
                             )
                         )
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.Bottom,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = app.name,

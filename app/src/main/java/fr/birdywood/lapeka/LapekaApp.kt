@@ -7,10 +7,14 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import fr.birdywood.lapeka.worker.UpdateCheckWorker
 import java.util.concurrent.TimeUnit
 
-class LapekaApp : Application() {
+class LapekaApp : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
@@ -32,5 +36,22 @@ class LapekaApp : Application() {
             ExistingPeriodicWorkPolicy.UPDATE,
             request
         )
+    }
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .memoryCache {
+                MemoryCache.Builder(this)
+                    .maxSizePercent(0.25) // Use 25% of available app memory
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(50 * 1024 * 1024) // 50 MB disk cache limit
+                    .build()
+            }
+            .respectCacheHeaders(false) // Set to false to force caching even if HTTP headers restrict it
+            .build()
     }
 }

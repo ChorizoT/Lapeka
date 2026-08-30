@@ -2,8 +2,10 @@ package fr.birdywood.lapeka.ui
 
 import android.content.Intent
 import android.util.Log
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -160,13 +162,26 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
 
                 NavHost(
                     navController = navController, startDestination = "list",
-                    enterTransition = {
+                    /*enterTransition = {
                         EnterTransition.None
                     },
                     exitTransition = {
                         ExitTransition.None
-                    }) {
-                    composable("list") {
+                    }*/
+                    ) {
+                    composable("list",
+                        enterTransition = {
+                            slideIntoContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(400)
+                            )
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(400)
+                            )
+                        }) {
 
                         var isRefreshing by remember { mutableStateOf(false) }
                         val coroutineScope = rememberCoroutineScope()
@@ -193,7 +208,19 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             }
                         }
                     }
-                    composable("account") {
+                    composable("account",
+                        enterTransition = {
+                            slideIntoContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(400)
+                            )
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(400)
+                            )
+                        }) {
                         AccountScreen(accountViewModel)
                     }
                 }
