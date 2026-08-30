@@ -50,14 +50,15 @@ class AppsRepository(
 
     suspend fun fetchFeaturedApps(): List<FeaturedApp> {
         //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
-        val apps = birdyAuth.request<List<FeaturedApp>>(
+        var apps = birdyAuth.request<List<FeaturedApp>>(
             "GET",
             "https://vps.birdywood.fr/project/projects.json",
             "",
             false
         ).getOrNull() ?: emptyList()
-
-        return apps.filter { it.img != "" && !it.img.substringBefore('?').substringBefore('#').substringAfterLast('.', "").equals("svg", ignoreCase = true)} //Exclude apps without image and apps with image in SVG
+        apps = apps.filter { it.img != "" && !it.img.substringBefore('?').substringBefore('#').substringAfterLast('.', "").equals("svg", ignoreCase = true)} //Exclude apps without image and apps with image in SVG
+        apps = apps.filter { it.id != "lapeka" } // Remove Lapeka app
+        return apps
     }
 
     private fun getInstalledPackageInfo(packageName: String): PackageInfo? {

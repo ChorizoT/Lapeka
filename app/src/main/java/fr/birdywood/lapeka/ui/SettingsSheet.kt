@@ -3,10 +3,13 @@ package fr.birdywood.lapeka.ui
 import android.content.Intent
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -47,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -99,145 +103,42 @@ fun SettingsSheet(
     var selectedDarkModeOption by remember {
         mutableStateOf(currentDarkMode)
     }
+    val _onDismiss: () -> Unit = {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            if (!sheetState.isVisible) {
+                onDismiss()
+            }
+        }
+    }
 
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        /*LazyColumn(modifier = Modifier.padding(24.dp)) {
-            stickyHeader {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                ) {
-                    Text(
-                        stringResource(R.string.action_settings),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-            }
-            /*item {
-                Text(
-                    stringResource(R.string.text_manifest_endpoint),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                /*Row {
-                    OutlinedTextField(
-                        value = url,
-                        onValueChange = { url = it },
-                        label = { Text(stringResource(R.string.text_api_url)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { onSave(url) },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = url.isNotBlank()
-                    ) {
-                        Text(stringResource(R.string.action_save))
-                    }
-                }*/
-                Row(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextField(
-                        value = url,
-                        onValueChange = { url = it },
-                        label = { Text(stringResource(R.string.text_api_url)) },
-                        singleLine = true,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    )
-                    FloatingActionButton(
-                        modifier = Modifier.fillMaxHeight(),
-                        onClick = {
-                            onSave(url)
-                        },
-                        elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.rounded_save_24),
-                            contentDescription = stringResource(R.string.action_save)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }*/
-            item {
-                ToggleSetting(
-                    prefSystem,
-                    stringResource(R.string.dynamic_theme),
-                    "dynamicTheme"
-                ) {
-                    onDismiss()
-                    activity?.recreate()
-                }
-            }
-            item {
-                SelectSetting(
-                    prefSystem, stringResource(R.string.dark_mode), "darkmode", listOf(
-                        stringResource(R.string.settings_select_system_mode),
-                        stringResource(R.string.settings_select_light),
-                        stringResource(R.string.settings_select_dark)
-                    )
-                ) {
-                    onDismiss()
-                    activity?.recreate()
-                }
-            }
-            item {
-                Spacer(modifier = Modifier.height(48.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(72.dp))
-            }
-
-            item {
-                var buttonEnabled by rememberSaveable { mutableStateOf(true) }
-                SettingsRow(stringResource(R.string.force_reload_danger)) {
-                    Button(
-                        enabled = buttonEnabled,
-                        onClick = {
-                            scope.launch {
-                                prefSystem.set("forceReload", true)
-                                buttonEnabled = false
-                                viewModel.refresh()
-                                delay(1000)
-                                buttonEnabled = true
-                                prefSystem.set("forceReload", false)
-                            }
-                        }
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.rounded_refresh_24),
-                            contentDescription = "Refresh"
-                        )
-                    }
-                }
-            }
-            item { SettingsRow(stringResource(R.string.version)) { Text("${BuildConfig.VERSION_NAME}") } }
-            item { SettingsRow(stringResource(R.string.credit)) { Text(stringResource(R.string.build_with_love_by_birdywood)) } }
-            item { Text(stringResource(R.string.credit_app), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)}
-
-        }*/
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) }
+    ) {
         val titleDisplay = stringResource(R.string.settings_title_display)
         val titleNetwork = stringResource(R.string.settings_title_network)
         val titleUpdate = stringResource(R.string.settings_title_update)
         val titleOther = stringResource(R.string.settings_title_other)
-        LazyColumn(modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp, top = 0.dp)) {
+        LazyColumn(
+            modifier = Modifier.padding(
+                start = 24.dp,
+                end = 24.dp,
+                bottom = 24.dp,
+                top = 0.dp
+            )
+        ) {
             stickyHeader {
-                Row (modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 0.dp),
+                Row(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .fillMaxWidth()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {}
+                        .padding(start = 0.dp, end = 0.dp, bottom = 16.dp, top = 0.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -246,7 +147,7 @@ fun SettingsSheet(
                     )
                     IconButton(
                         {
-                            onDismiss()
+                            _onDismiss()
                         },
                         modifier = Modifier
                             .align(Alignment.CenterVertically)
@@ -267,9 +168,12 @@ fun SettingsSheet(
                 SettingsTextFieldTile(
                     title = stringResource(R.string.text_manifest_endpoint),
                     value = url,
-                    onValueSave = { newUrl -> url = newUrl ;if (newUrl.isNotBlank()) onSave(newUrl) },
+                    onValueSave = { newUrl ->
+                        url = newUrl; if (newUrl.isNotBlank()) onSave(newUrl)
+                    },
                     label = stringResource(R.string.text_api_url),
-                    icon = painterResource(R.drawable.cloud_24)
+                    icon = painterResource(R.drawable.cloud_24),
+                    position = TilePosition.START
                 )
                 var show_featured_apps by remember {
                     mutableStateOf(
@@ -288,17 +192,18 @@ fun SettingsSheet(
                         scope.launch {
                             prefSystem.set("show_featured_apps", it)
                             delay(200.milliseconds)
-                            onDismiss()
+                            _onDismiss()
                             activity?.finish()
                         }
                     },
-                    icon = painterResource(R.drawable.editor_choice_24)
+                    icon = painterResource(R.drawable.editor_choice_24),
+                    position = TilePosition.END
                 )
             }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
+//            item {
+//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+//            }
 
             // --- SECTION APPARENCE ---
             SettingsSection(title = titleDisplay) {
@@ -319,24 +224,26 @@ fun SettingsSheet(
                         scope.launch {
                             prefSystem.set("dynamicTheme", it)
                             delay(200.milliseconds)
-                            onDismiss()
+                            _onDismiss()
                             activity?.recreate()
                         }
                     },
-                    icon = painterResource(R.drawable.palette_24)
+                    icon = painterResource(R.drawable.palette_24),
+                    position = TilePosition.START
                 )
 
                 SettingsTile(
                     title = stringResource(R.string.dark_mode),
                     subtitle = selectedDarkModeOption,
                     icon = painterResource(R.drawable.dark_mode_24),
-                    onClick = { showDarkModeDialog = true }
+                    onClick = { showDarkModeDialog = true },
+                    position = TilePosition.END
                 )
             }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
+//            item {
+//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+//            }
             // --- SECTION MISES À JOUR ---
             SettingsSection(title = titleUpdate) {
                 var buttonEnabled = true
@@ -352,17 +259,19 @@ fun SettingsSheet(
                                 buttonEnabled = true
                             }
                         }
-                    }
+                    },
+                    position = TilePosition.ALONE
                 )
             }
 
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
+//            item {
+//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+//            }
             // --- SECTION AUTRES ---
             SettingsSection(title = titleOther) {
                 val context = LocalContext.current
                 val email = stringResource(R.string.email)
+                val homepage = stringResource(R.string.app_homepage)
                 SettingsTile(
                     title = stringResource(R.string.notifications),
                     subtitle = stringResource(R.string.notifications_subtitle),
@@ -370,14 +279,28 @@ fun SettingsSheet(
                     modifier = Modifier,
                     onClick = {
                         openAppNotificationSettings(context)
-                    }
+                    },
+                    position = TilePosition.START
                 )
                 SettingsTile(
                     title = stringResource(R.string.github_repository),
                     icon = painterResource(R.drawable.github_brands_solid_ful),
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW,
-                            "https://github.com/ChorizoT/Lapeka".toUri())
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            "https://github.com/ChorizoT/Lapeka".toUri()
+                        )
+                        context.startActivity(intent)
+                    }
+                )
+                SettingsTile(
+                    title = stringResource(R.string.github_changelog),
+                    icon = painterResource(R.drawable.newspaper_24),
+                    onClick = {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            "$homepage/changelog".toUri()
+                        )
                         context.startActivity(intent)
                     }
                 )
@@ -394,7 +317,12 @@ fun SettingsSheet(
                         if (intent.resolveActivity(context.packageManager) != null) {
                             context.startActivity(intent)
                         } else {
-                            context.startActivity(Intent.createChooser(intent, "Envoyer un e-mail via..."))
+                            context.startActivity(
+                                Intent.createChooser(
+                                    intent,
+                                    "Envoyer un e-mail via..."
+                                )
+                            )
                         }
                     }
                 )
@@ -402,7 +330,8 @@ fun SettingsSheet(
                     title = stringResource(R.string.version_actuelle),
                     subtitle = BuildConfig.VERSION_NAME,
                     icon = painterResource(R.drawable.info_24),
-                    onClick = null
+                    onClick = null,
+                    position = TilePosition.END
                 )
             }
 

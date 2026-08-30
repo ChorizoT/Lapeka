@@ -39,12 +39,14 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.*
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -68,6 +70,7 @@ import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -98,11 +101,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.data.AppStatus
+import fr.birdywood.lapeka.data.FeaturedApp
 import fr.birdywood.lapeka.data.TrackedApp
 import java.text.DateFormat.getDateInstance
 import java.util.Date
@@ -118,10 +123,12 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
     var hideKeyboard by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+    val state = rememberLazyListState()
 
     Column {
 
         LazyColumn(
+            state = state,
             modifier = Modifier.fillMaxHeight(),
             contentPadding = PaddingValues(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -193,7 +200,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                 Spacer(Modifier.height(16.dp))
             }
             item {
-                androidx.compose.animation.AnimatedVisibility(
+                AnimatedVisibility(
                     search == "" && uiState.showFeaturedApps,
                     enter = slideInVertically(initialOffsetY = { -it }) + expandVertically(),
                     exit = slideOutVertically(targetOffsetY = { -it }) + shrinkVertically()
@@ -212,13 +219,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                                 ContainedLoadingIndicator()
                             }
                         } else {
-                            FeaturedAppsCarouselSection(uiState.featuredApps.map {
-                                AppBanner(
-                                    it.id,
-                                    it.name,
-                                    it.img
-                                )
-                            }) { id ->
+                            FeaturedAppsCarouselSection(uiState.featuredApps) { id ->
                                 val app = uiState.featuredApps.find { it.id == id }
                                 if (app != null) {
                                     val intent = CustomTabsIntent.Builder().build()
@@ -431,18 +432,6 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun AppProgressIndicator() {
-    Column {
-        Spacer(modifier = Modifier.height(12.dp))
-        LinearWavyProgressIndicator(
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-    }
-}
-
 @Composable
 private fun DetailRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth()) {
@@ -515,24 +504,16 @@ private fun StatusAction(app: TrackedApp, onAction: () -> Unit) {
     }
 }
 
-// Modèle de données simplifié pour l'exemple
-data class AppBanner(
-    val id: String,
-    val name: String,
-    val bannerUrl: String
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeaturedAppsCarouselSection(
-    featuredApps: List<AppBanner>,
+    featuredApps: List<FeaturedApp>,
     onAppClick: (String) -> Unit
 ) {
     if (featuredApps.isEmpty()) return
 
     val carouselState = rememberCarouselState { featuredApps.size }
 
-    // Carousel centré style "Hero" M3
     HorizontalMultiBrowseCarousel(
         state = carouselState,
         modifier = Modifier
@@ -543,27 +524,25 @@ fun FeaturedAppsCarouselSection(
     ) { index ->
         val app = featuredApps[index]
 
-        // CarouselScope fournit directement le comportement d'affichage
         Card(
             onClick = { onAppClick(app.id) },
             shape = RoundedCornerShape(28.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .maskClip(MaterialTheme.shapes.extraLarge), // M3 applique la découpe fluide
+                .maskClip(MaterialTheme.shapes.extraLarge),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                // Image de fond
                 AsyncImage(
-                    model = app.bannerUrl,
+                    model = app.img,
                     contentDescription = "Bannière de ${app.name}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
 
-                // Bandeau sombre en dégradé pour le nom
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -584,7 +563,12 @@ fun FeaturedAppsCarouselSection(
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 8.sp,
+                            maxFontSize = 16.sp,
+                            stepSize = 1.sp
+                        )
                     )
                 }
             }

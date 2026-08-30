@@ -1,22 +1,35 @@
 package fr.birdywood.lapeka.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyScopeMarker
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import fr.birdywood.lapeka.R
 
@@ -26,16 +39,20 @@ fun SettingsTile(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: Painter? = null,
+    color: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+    position: TilePosition = TilePosition.MIDDLE,
     onClick: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null
 ) {
     Surface(
         modifier = modifier
+            .padding(position.padding())
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = MaterialTheme.shapes.small,
-        color = Color.Transparent
-    ) {
+        shape = position.shape(),
+        color = color,
+
+        ) {
         Row(
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -43,14 +60,24 @@ fun SettingsTile(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
+                Box(
+                    Modifier
                         .padding(end = 16.dp)
-                        .size(24.dp)
-                )
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            RoundedCornerShape(12.dp)
+                        )
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(8.dp)
+                            .size(24.dp)
+                    )
+                }
             }
 
             Column(
@@ -78,19 +105,46 @@ fun SettingsTile(
     }
 }
 
+enum class TilePosition {
+    START,
+    MIDDLE,
+    END,
+    ALONE;
+
+    fun shape() =
+        when (this) {
+            START -> RoundedCornerShape(20.dp, 20.dp, 8.dp, 8.dp)
+            MIDDLE -> RoundedCornerShape(8.dp, 8.dp, 8.dp, 8.dp)
+            END -> RoundedCornerShape(8.dp, 8.dp, 20.dp, 20.dp)
+            ALONE -> RoundedCornerShape(20.dp, 20.dp, 20.dp, 20.dp)
+        }
+
+
+    fun padding() =
+        when (this) {
+            START -> PaddingValues(top = 8.dp, bottom = 2.dp)
+            MIDDLE -> PaddingValues(vertical = 2.dp)
+            END -> PaddingValues(top = 2.dp, bottom = 8.dp)
+            ALONE -> PaddingValues(vertical = 8.dp)
+        }
+
+}
+
 @Composable
 fun SettingsSwitchTile(
     title: String,
     checked: Boolean,
+    position: TilePosition = TilePosition.MIDDLE,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    icon: Painter? = null
+    icon: Painter? = null,
 ) {
     SettingsTile(
         title = title,
         subtitle = subtitle,
         icon = icon,
+        position = position,
         modifier = modifier,
         onClick = { onCheckedChange(!checked) },
         action = {
@@ -109,18 +163,30 @@ fun SettingsTextFieldTile(
     value: String,
     onValueSave: (String) -> Unit,
     modifier: Modifier = Modifier,
+    position: TilePosition = TilePosition.MIDDLE,
     subtitle: String? = null,
     icon: Painter? = null,
     label: String = ""
 ) {
-    var textState by androidx.compose.runtime.remember(value) { androidx.compose.runtime.mutableStateOf(value) }
+    var textState by androidx.compose.runtime.remember(value) {
+        androidx.compose.runtime.mutableStateOf(
+            value
+        )
+    }
     val isChanged = textState != value
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .padding(position.padding())
+            .fillMaxWidth()
+            .clip(position.shape())
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
         SettingsTile(
             title = title,
             subtitle = subtitle,
-            icon = icon
+            icon = icon,
+            color = Color.Transparent
         )
 
         Row(
@@ -129,27 +195,48 @@ fun SettingsTextFieldTile(
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (isChanged) {
+            if (isChanged || true) {
+                val trailingIconWidth by animateDpAsState(
+                    targetValue = if (isChanged) 48.dp else 0.dp,
+                    label = "trailingIconWidth"
+                )
                 OutlinedTextField(
                     value = textState,
                     onValueChange = { textState = it },
                     label = { Text(label) },
                     singleLine = true,
                     modifier = Modifier.weight(1f),
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { onValueSave(textState) },
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.rounded_save_24),
-                                contentDescription = "Enregistrer",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                    trailingIcon = if (trailingIconWidth > 0.dp) {
+                        {
+                            Box(
+                                modifier = Modifier
+                                    .width(trailingIconWidth)
+                                    .clipToBounds(), // Empêche l'icône de dépasser pendant qu'elle se réduit
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.animation.AnimatedVisibility(
+                                    visible = isChanged,
+                                    enter = slideInHorizontally(initialOffsetX = { it }) + expandHorizontally(),
+                                    exit = slideOutHorizontally(targetOffsetX = { it }) + shrinkHorizontally(),
+                                ) {
+                                    IconButton(
+                                        onClick = { onValueSave(textState) },
+                                        colors = IconButtonDefaults.iconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                                        )
+                                    ) {
+                                        Icon(
+                                            painterResource(R.drawable.rounded_save_24),
+                                            contentDescription = stringResource(R.string.action_save),
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
                         }
-                    }
+                    } else null
                 )
-            }else{
+            } else {
                 OutlinedTextField(
                     value = textState,
                     onValueChange = { textState = it },
@@ -159,6 +246,7 @@ fun SettingsTextFieldTile(
                 )
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -174,7 +262,7 @@ fun LazyListScope.SettingsSection(
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 0.dp, top = 16.dp, bottom = 8.dp)
             )
             content()
         }
