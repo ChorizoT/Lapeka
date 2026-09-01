@@ -88,4 +88,7 @@
     <string name="featured_apps">My creations</string>
     <string name="featured_apps_subtitle">Show BirdyWood\'s app</string>
     <string name="github_changelog">Changelog</string>
+    <string name="labs_subtitle">New experimental UI</string>
+    <string name="action_share">Share Lapeka</string>
+    <string name="labs_title">Lapeka Labs</string>
 </resources>

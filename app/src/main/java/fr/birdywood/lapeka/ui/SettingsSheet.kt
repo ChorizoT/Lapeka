@@ -27,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -215,6 +213,15 @@ fun SettingsSheet(
                         )
                     )
                 }
+
+                var labs by remember {
+                    mutableStateOf(
+                        prefSystem.get(
+                            "labs",
+                            false
+                        )
+                    )
+                }
                 SettingsSwitchTile(
                     title = stringResource(R.string.dynamic_theme),
                     subtitle = stringResource(R.string.dynamic_theme_subtitle),
@@ -237,6 +244,23 @@ fun SettingsSheet(
                     subtitle = selectedDarkModeOption,
                     icon = painterResource(R.drawable.dark_mode_24),
                     onClick = { showDarkModeDialog = true },
+                    position = TilePosition.MIDDLE
+                )
+
+                SettingsSwitchTile(
+                    title = stringResource(R.string.labs_title),
+                    subtitle = stringResource(R.string.labs_subtitle),
+                    checked = labs,
+                    onCheckedChange = {
+                        labs = it
+                        scope.launch {
+                            prefSystem.set("labs", it)
+                            delay(200.milliseconds)
+                            _onDismiss()
+                            activity?.recreate()
+                        }
+                    },
+                    icon = painterResource(R.drawable.experiment_24),
                     position = TilePosition.END
                 )
             }

@@ -53,6 +53,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val downloadUrl = stringResource(R.string.app_homepage)
     val shareMessage = stringResource(R.string.share_message, downloadUrl)
     val shareTitle = stringResource(R.string.share_title)
+    val labs = remember { prefSystem.get("labs", false) }
 
     var showDialog by remember {
         mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE)
@@ -81,50 +82,51 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                 ),
             containerColor = Color.Transparent,
             topBar = {
-                TopAppBar(
-                    modifier = Modifier.clip(
-                        shape = RoundedCornerShape(
-                            0.dp,
-                            0.dp,
-                            16.dp,
-                            16.dp
-                        )
-                    ),
-                    title = { Text(stringResource(R.string.app_name)) },
-                    actions = {
-                        IconButton(onClick = { viewModel.refresh() }) {
-                            Icon(
-                                painterResource(R.drawable.rounded_refresh_24),
-                                contentDescription = stringResource(R.string.action_refresh)
+                if (labs) {
+                    NewTopSearchBar(
+                        queryValue = uiState.searchQuery,
+                        onQueryChange = { newValue ->
+                            viewModel.setSearchQuery(newValue)
+                            // C'est ici que vous pouvez déclencher le filtrage de vos produits à la volée !
+                        },
+                        onShareClick = {viewModel.shareLapeka()},
+                        onSettingsClick = {showSettings = true}
+                    )
+                } else {
+                    TopAppBar(
+                        modifier = Modifier.clip(
+                            shape = RoundedCornerShape(
+                                0.dp,
+                                0.dp,
+                                16.dp,
+                                16.dp
                             )
-                        }
-                        IconButton(onClick = {
-                            val sendIntent: Intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    shareMessage
+                        ),
+                        title = { Text(stringResource(R.string.app_name)) },
+                        actions = {
+                            IconButton(onClick = { viewModel.refresh() }) {
+                                Icon(
+                                    painterResource(R.drawable.rounded_refresh_24),
+                                    contentDescription = stringResource(R.string.action_refresh)
                                 )
-                                putExtra(Intent.EXTRA_TITLE, shareTitle)
-                                type = "text/plain"
                             }
-                            val shareIntent = Intent.createChooser(sendIntent, null)
-                            context.startActivity(shareIntent)
-                        }) {
-                            Icon(
-                                painterResource(R.drawable.share_24),
-                                contentDescription = null
-                            )
-                        }
-                        IconButton(onClick = { showSettings = true }) {
-                            Icon(
-                                painterResource(R.drawable.rounded_settings_24),
-                                contentDescription = stringResource(R.string.action_settings)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.inverseOnSurface)
-                )
+                            IconButton(onClick = {viewModel.shareLapeka()
+                            }) {
+                                Icon(
+                                    painterResource(R.drawable.share_24),
+                                    contentDescription = null
+                                )
+                            }
+                            IconButton(onClick = { showSettings = true }) {
+                                Icon(
+                                    painterResource(R.drawable.rounded_settings_24),
+                                    contentDescription = stringResource(R.string.action_settings)
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.inverseOnSurface)
+                    )
+                }
             },
             snackbarHost = {
                 SnackbarHost(hostState = snackbarHostState)
@@ -168,8 +170,9 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                     exitTransition = {
                         ExitTransition.None
                     }*/
-                    ) {
-                    composable("list",
+                ) {
+                    composable(
+                        "list",
                         enterTransition = {
                             slideIntoContainer(
                                 AnimatedContentTransitionScope.SlideDirection.End,
@@ -208,7 +211,8 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             }
                         }
                     }
-                    composable("account",
+                    composable(
+                        "account",
                         enterTransition = {
                             slideIntoContainer(
                                 AnimatedContentTransitionScope.SlideDirection.Start,

@@ -2,7 +2,6 @@ package fr.birdywood.lapeka.ui
 
 import android.content.Context
 import android.content.Intent
-import androidx.annotation.DrawableRes
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateIntAsState
@@ -14,7 +13,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,13 +33,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -59,43 +53,32 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
-import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -121,12 +104,16 @@ import java.util.Date
 fun ListScreen(viewModel: ListViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    var search by rememberSaveable { mutableStateOf("") }
+    val search = uiState.searchQuery
 
     var hideKeyboard by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val state = rememberLazyListState()
+
+    val prefSystem = remember { fr.birdywood.lapeka.birdyauth.PreferenceSystem(context) }
+    val labs = remember { prefSystem.get("labs", false) }
+
 
     Column {
 
@@ -136,71 +123,75 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
             contentPadding = PaddingValues(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            stickyHeader {
-                Spacer(Modifier.height(24.dp))
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(CircleShape)
-                        .clickable { hideKeyboard = true }
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape
-                        )
-                ) {
-
-
-                    TextField(
+            item {
+                Spacer(Modifier.height(12.dp))
+            }
+            if (!labs) {
+                stickyHeader {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth(), value = search,
-                        onValueChange = { search = it },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = {
-                            focusManager.clearFocus()
-                        }),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            cursorColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        leadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.rounded_search_24),
-                                contentDescription = "search icon"
+                            .fillMaxWidth()
+                            .clip(CircleShape)
+                            .clickable { hideKeyboard = true }
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape
                             )
-                        },
-                        trailingIcon = {
-                            if (search != "") {
-                                IconButton(
-                                    onClick = { search = ""; focusManager.clearFocus() }
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.rounded_close_24),
-                                        contentDescription = "close icon"
-                                    )
+                    ) {
+
+
+                        TextField(
+                            modifier = Modifier
+                                .fillMaxWidth(), value = search,
+                            onValueChange = { viewModel.setSearchQuery(it) },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = {
+                                focusManager.clearFocus()
+                            }),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.rounded_search_24),
+                                    contentDescription = "search icon"
+                                )
+                            },
+                            trailingIcon = {
+                                if (search != "") {
+                                    IconButton(
+                                        onClick = { viewModel.setSearchQuery(""); focusManager.clearFocus() }
+                                    ) {
+                                        Icon(
+                                            painterResource(R.drawable.rounded_close_24),
+                                            contentDescription = "close icon"
+                                        )
+                                    }
                                 }
-                            }
-                        },
-                        placeholder = { Text(text = stringResource(R.string.action_search)) }
-                    )
-                    if (hideKeyboard) {
-                        focusManager.clearFocus()
-                        // Call onFocusClear to reset hideKeyboard state to false
-                        hideKeyboard = false
+                            },
+                            placeholder = { Text(text = stringResource(R.string.action_search)) }
+                        )
+                        if (hideKeyboard) {
+                            focusManager.clearFocus()
+                            // Call onFocusClear to reset hideKeyboard state to false
+                            hideKeyboard = false
+                        }
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
-                Spacer(Modifier.height(16.dp))
             }
             if (uiState.isLoadingApps) {
                 item {
@@ -213,8 +204,10 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                 }
             } else {
                 items(uiState.apps.filter {
-                    (it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(search))
-                                          /*&& (app.remote.id != "lapeka" || app.status != AppStatus.UP_TO_DATE)*/
+                    (it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(
+                        search
+                    ))
+                    /*&& (app.remote.id != "lapeka" || app.status != AppStatus.UP_TO_DATE)*/
                 }, key = { it.remote.id }) { app ->
                     AppCard(
                         app = app,

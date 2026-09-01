@@ -14,8 +14,8 @@ android {
         applicationId = "fr.birdywood.lapeka"
         minSdk = 26
         targetSdk = 37
-        versionCode = 19
-        versionName = "1.6.2"
+        versionCode = 20
+        versionName = "1.7.0"
     }
 
     buildFeatures {
@@ -48,6 +48,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-text-google-fonts:1.11.4")
     implementation("androidx.compose.ui:ui-text:1.11.4")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.ui:ui:1.12.0")
     implementation("androidx.navigation:navigation-compose:2.9.8")
     implementation("com.squareup.moshi:moshi:1.15.2")
     ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.2")

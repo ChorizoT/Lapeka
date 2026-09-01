@@ -84,4 +84,7 @@
     <string name="featured_apps">Mes créations</string>
     <string name="featured_apps_subtitle">Afficher les apps de BirdyWood</string>
     <string name="github_changelog">Journal des modifications</string>
+    <string name="labs_subtitle">Nouvelle UI expérimentale</string>
+    <string name="action_share">Partager Lapeka</string>
+    <string name="labs_title">Lapeka Labs</string>
 </resources>

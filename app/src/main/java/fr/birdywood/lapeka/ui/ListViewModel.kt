@@ -1,9 +1,12 @@
 package fr.birdywood.lapeka.ui
 
 import android.app.Application
+import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.data.AppStatus
 import fr.birdywood.lapeka.data.AppsRepository
 import fr.birdywood.lapeka.data.FeaturedApp
@@ -26,7 +29,8 @@ data class AppListUiState(
     val isLoadingFeaturedApps: Boolean = false,
     val errorMessage: String? = null,
     val manifestUrl: String = "",
-    val showFeaturedApps: Boolean = true
+    val showFeaturedApps: Boolean = true,
+    val searchQuery: String = ""
 )
 
 class ListViewModel(application: Application) : AndroidViewModel(application) {
@@ -174,5 +178,28 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     fun showErrorMessage(msg:String){
         _uiState.value =
             _uiState.value.copy(errorMessage = "Error: ${msg}")
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    fun shareLapeka(){
+        val downloadUrl = application.getString(R.string.app_homepage)
+        val shareMessage = application.getString(R.string.share_message, downloadUrl)
+        val shareTitle = application.getString(R.string.share_title)
+
+        val sendIntent: Intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(
+                Intent.EXTRA_TEXT,
+                shareMessage
+            )
+            putExtra(Intent.EXTRA_TITLE, shareTitle)
+            type = "text/plain"
+        }
+        val shareIntent = Intent.createChooser(sendIntent, null)
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        application.startActivity(shareIntent)
     }
 }
