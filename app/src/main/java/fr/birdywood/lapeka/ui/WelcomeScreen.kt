@@ -4,18 +4,37 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fr.birdywood.lapeka.R
+import fr.birdywood.lapeka.ui.theme.LapekaTheme
 
 @Composable
 fun WelcomeScreen(onGetStarted: () -> Unit) {
@@ -24,6 +43,40 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
     ) { _ ->
         onGetStarted()
     }
+
+    var startAnimation by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        startAnimation = true
+    }
+
+    val popScale by animateFloatAsState(
+        targetValue = if (startAnimation) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "PopInAnimation"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "PlayfulMotion")
+    val bounceY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "BirdBounce"
+    )
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "BirdRotation"
+    )
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -36,11 +89,20 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                contentDescription = null,
-                modifier = Modifier.size(120.dp)
-            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .scale(popScale)
+                    .offset(y = bounceY.dp)
+                    .graphicsLayer(rotationZ = rotation)
+                    .size(180.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground), // Votre mascotte joyeuse (ex: petit oiseau)
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -79,5 +141,13 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun WelcomScreenPreview(){
+    LapekaTheme {
+        WelcomeScreen {  }
     }
 }

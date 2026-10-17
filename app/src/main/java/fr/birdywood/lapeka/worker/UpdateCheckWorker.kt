@@ -128,16 +128,21 @@ class UpdateCheckWorker(
 
     private suspend fun downloadBitmap(context: Context, url: String): Bitmap? = withContext(
         Dispatchers.IO) {
-        val loader = ImageLoader(context)
-        val request = ImageRequest.Builder(context)
-            .data(url)
-            .allowHardware(false) // Requis pour eviter les erreurs d'affichage dans la notification
-            .build()
+        try {
+            val loader = ImageLoader(context)
+            val request = ImageRequest.Builder(context)
+                .data(fr.birdywood.lapeka.birdyauth.ensureValidUrl(url))
+                .allowHardware(false) // Requis pour eviter les erreurs d'affichage dans la notification
+                .build()
 
-        val result = loader.execute(request)
-        if (result is SuccessResult) {
-            (result.drawable as? BitmapDrawable)?.bitmap
-        } else {
+            val result = loader.execute(request)
+            if (result is SuccessResult) {
+                (result.drawable as? BitmapDrawable)?.bitmap
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateCheckWorker", "Error downloading bitmap: ${e.message}", e)
             null
         }
     }

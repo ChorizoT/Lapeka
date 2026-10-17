@@ -17,10 +17,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
 import fr.birdywood.lapeka.birdyauth.BirdyAuth
-import fr.birdywood.lapeka.birdyauth.PreferenceSystem
 import fr.birdywood.lapeka.ui.App
 import fr.birdywood.lapeka.ui.theme.LapekaTheme
 import fr.birdywood.lapeka.ui.theme.DefaultGradient
+import fr.birdywood.lapeka.utils.AppPreferences
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -31,16 +31,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         ba = BirdyAuth(this)
         val handled = handleIntent(intent)
-        val pref = PreferenceSystem(this)
+
+        AppPreferences.init(this)
+        //val pref = PreferenceSystem(this)
 
         setContent {
-            val darkTheme = when (pref.get("darkmode", stringResource(R.string.settings_select_system_mode))){
+            val darkTheme = when (AppPreferences.themeMode){
                 stringResource(R.string.settings_select_light) -> false
                 stringResource(R.string.settings_select_dark) -> true
                 stringResource(R.string.settings_select_system_mode) -> isSystemInDarkTheme()
                 else -> isSystemInDarkTheme()
             }
-            LapekaTheme (darkTheme = darkTheme, dynamicColor = pref.get("dynamicTheme", false)) {
+            LapekaTheme (darkTheme = darkTheme, dynamicColor = AppPreferences.dynamicTheme) {
                 val color = DefaultGradient().last().copy(alpha = 0.5f)
                 enableEdgeToEdge(
                     navigationBarStyle = SystemBarStyle.light(
@@ -57,8 +59,12 @@ class MainActivity : ComponentActivity() {
 
         if (!handled) {
             lifecycleScope.launch {
-                    ba.check(){
+                try {
+                    ba.check() {
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -78,7 +84,7 @@ class MainActivity : ComponentActivity() {
                     lifecycleScope.launch {
                         try {
                             ba.check(){
-                                //shwo snackbar error with viewmodel . showErrorMessage
+                                //show snackbar error with viewmodel . showErrorMessage
                             }
                         } catch (e: IOException) {
                             e.printStackTrace()

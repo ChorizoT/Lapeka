@@ -17,6 +17,7 @@ import fr.birdywood.lapeka.installer.InstallEvent
 import fr.birdywood.lapeka.installer.InstallEventBus
 import fr.birdywood.lapeka.installer.NotificationHelper
 import fr.birdywood.lapeka.installer.SilentInstaller
+import fr.birdywood.lapeka.utils.AppPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,7 +44,6 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
     private val downloader = ApkDownloader(application)
     private val installer = SilentInstaller(application)
     private val notificationHelper = NotificationHelper(application)
-    private val pref = repository.preferenceSystem
 
     private val _uiState = MutableStateFlow(
         AppListUiState(manifestUrl = manifestConfig.manifestUrl)
@@ -67,7 +67,7 @@ class ListViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         if (manifestConfig.hasManifestUrl) refresh()
-        if (pref.get("show_featured_apps", true)){
+        if (AppPreferences.showFeaturedApps){
             getFeaturedApp()
         }else{
             _uiState.value = _uiState.value.copy(showFeaturedApps = false)

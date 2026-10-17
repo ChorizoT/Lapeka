@@ -56,7 +56,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_title">Bienvenue sur Lapeka</string>
-    <string name="welcome_desc">Votre gestionnaire d\'applications personnel. Suivez, téléchargez et mettez à jour vos outils facilement.</string>
+    <string name="welcome_desc">Votre gestionnaire d\'applications personnel. Suivez, téléchargez et mettez à jour vos apps facilement.</string>
     <string name="action_get_started">Commencer</string>
     <string name="permission_notification_title">Restez informé</string>
     <string name="permission_notification_desc">Lapeka a besoin de l\'autorisation de notification pour vous montrer la progression de vos installations.</string>

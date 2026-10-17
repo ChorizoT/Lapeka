@@ -2,6 +2,7 @@ package fr.birdywood.lapeka.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import fr.birdywood.lapeka.utils.AppPreferences
 
 /**
  * Minimal persisted config — just the manifest endpoint URL. Kept as plain
@@ -14,8 +15,8 @@ class ManifestConfig(val context: Context) {
         context.getSharedPreferences("lapeka_config", Context.MODE_PRIVATE)
 
     var manifestUrl: String
-        get() = prefs.getString(KEY_MANIFEST_URL, "https://lapeka.labs.birdywood.fr/data") ?: ""
-        set(value) = prefs.edit().putString(KEY_MANIFEST_URL, value).apply()
+        get() = AppPreferences.manifestUrl//prefs.getString(KEY_MANIFEST_URL, "https://lapeka.labs.birdywood.fr/data") ?: ""
+        set(value)  { AppPreferences.manifestUrl = value }
 
     val hasManifestUrl: Boolean
         get() = manifestUrl.isNotBlank()

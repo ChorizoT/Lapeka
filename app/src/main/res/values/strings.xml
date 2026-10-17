@@ -59,7 +59,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_title">Welcome to Lapeka</string>
-    <string name="welcome_desc">Your personal app manager. Track, download, and update your favorite tools easily.</string>
+    <string name="welcome_desc">Your personal app manager. Track, download, and update your favorite apps easily.</string>
     <string name="action_get_started">Get Started</string>
     <string name="permission_notification_title">Stay Updated</string>
     <string name="permission_notification_desc">Lapeka needs notification permission to show you the progress of your installations.</string>

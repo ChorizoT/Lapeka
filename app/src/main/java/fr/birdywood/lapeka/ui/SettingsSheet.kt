@@ -60,6 +60,7 @@ import androidx.core.net.toUri
 import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.birdyauth.PreferenceSystem
+import fr.birdywood.lapeka.utils.AppPreferences
 import fr.birdywood.lapeka.utils.openAppNotificationSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -99,7 +100,7 @@ fun SettingsSheet(
         stringResource(R.string.settings_select_system_mode)
     )
     var selectedDarkModeOption by remember {
-        mutableStateOf(currentDarkMode)
+        mutableStateOf(AppPreferences.themeMode)
     }
     val _onDismiss: () -> Unit = {
         scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -175,10 +176,7 @@ fun SettingsSheet(
                 )
                 var show_featured_apps by remember {
                     mutableStateOf(
-                        prefSystem.get(
-                            "show_featured_apps",
-                            true
-                        )
+                        AppPreferences.showFeaturedApps
                     )
                 }
                 SettingsSwitchTile(
@@ -188,7 +186,7 @@ fun SettingsSheet(
                     onCheckedChange = {
                         show_featured_apps = it
                         scope.launch {
-                            prefSystem.set("show_featured_apps", it)
+                            AppPreferences.showFeaturedApps = it
                             delay(200.milliseconds)
                             _onDismiss()
                             activity?.finish()
@@ -207,19 +205,13 @@ fun SettingsSheet(
             SettingsSection(title = titleDisplay) {
                 var dynamicTheme by remember {
                     mutableStateOf(
-                        prefSystem.get(
-                            "dynamicTheme",
-                            false
-                        )
+                        AppPreferences.dynamicTheme
                     )
                 }
 
                 var labs by remember {
                     mutableStateOf(
-                        prefSystem.get(
-                            "labs",
-                            false
-                        )
+                        AppPreferences.labs
                     )
                 }
                 SettingsSwitchTile(
@@ -229,9 +221,10 @@ fun SettingsSheet(
                     onCheckedChange = {
                         dynamicTheme = it
                         scope.launch {
-                            prefSystem.set("dynamicTheme", it)
+                            AppPreferences.dynamicTheme = it
                             delay(200.milliseconds)
                             _onDismiss()
+                            delay(100.milliseconds)
                             activity?.recreate()
                         }
                     },
@@ -254,9 +247,10 @@ fun SettingsSheet(
                     onCheckedChange = {
                         labs = it
                         scope.launch {
-                            prefSystem.set("labs", it)
+                            AppPreferences.labs = it
                             delay(200.milliseconds)
                             _onDismiss()
+                            delay(100.milliseconds)
                             activity?.recreate()
                         }
                     },
@@ -421,7 +415,7 @@ fun SettingsSheet(
                     onClick = {
                         showDarkModeDialog = false
                         scope.launch {
-                            prefSystem.set("darkmode", selectedDarkModeOption)
+                            AppPreferences.themeMode = selectedDarkModeOption
                             // Small delay to allow sheet to start closing before recreate
                             delay(200.milliseconds)
                             activity?.recreate()
@@ -457,98 +451,3 @@ fun SettingsRow(label: String, content: @Composable () -> Unit) {
     }
     Spacer(modifier = Modifier.height(24.dp))
 }
-
-@Composable
-fun ToggleSetting(
-    preferenceSystem: PreferenceSystem,
-    label: String,
-    key: String,
-    defaultValue: Boolean = false,
-    onChange: (Boolean) -> Unit = {}
-) {
-    val scope = rememberCoroutineScope()
-    var checked by remember { mutableStateOf(preferenceSystem.get(key, defaultValue)) }
-    SettingsRow(label) {
-        Switch(
-            checked = checked,
-            onCheckedChange = {
-                checked = it
-                scope.launch {
-                    preferenceSystem.set(key, it)
-                    onChange(checked)
-                }
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun SelectSetting(
-    preferenceSystem: PreferenceSystem,
-    label: String,
-    key: String,
-    values: List<String>,
-    onChange: (String) -> Unit = {}
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedValue by remember {
-        mutableStateOf(preferenceSystem.get(key, values.first()))
-    }
-    val scope = rememberCoroutineScope()
-
-    SettingsRow(label) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
-        ) {
-            OutlinedTextField(
-                value = selectedValue,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(label) },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
-                modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                    .widthIn(max = 200.dp),
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-            )
-
-            DropdownMenuPopup(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.exposedDropdownSize(),
-            ) {
-                val itemCount = values.size
-
-                values.fastForEachIndexed { itemIndex, itemLabel ->
-                    DropdownMenuItem(
-                        text = { Text(itemLabel) },
-                        shapes = MenuDefaults.itemShape(itemIndex, itemCount),
-                        checked = selectedValue == itemLabel,
-                        onCheckedChange = { isChecked ->
-                            if (isChecked) {
-                                selectedValue = itemLabel
-                                expanded = false
-                                scope.launch {
-                                    preferenceSystem.set(key, itemLabel)
-                                    onChange(itemLabel)
-                                }
-                            }
-                        },
-                        checkedLeadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.rounded_check_24),
-                                modifier = Modifier.size(MenuDefaults.LeadingIconSize),
-                                contentDescription = null,
-                            )
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-

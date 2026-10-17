@@ -4,7 +4,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import fr.birdywood.lapeka.birdyauth.BirdyAuth
-import fr.birdywood.lapeka.birdyauth.PreferenceSystem
 
 class AppsRepository(
     private val packageManager: PackageManager,
@@ -12,10 +11,9 @@ class AppsRepository(
     private val apiService: AppsApiService = NetworkModule.appsApiService
 ) {
     val birdyAuth = BirdyAuth(manifestConfig.context)
-    val preferenceSystem = PreferenceSystem(manifestConfig.context)
 
     suspend fun fetchTrackedApps(forceReload: Boolean = false): List<TrackedApp> {
-        require(manifestConfig.hasManifestUrl) { "Manifest URL is not configured" }
+         require(manifestConfig.hasManifestUrl) { "Manifest URL is not configured" }
 
         //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
         val option = if (forceReload) "?force=true" else ""
@@ -24,7 +22,7 @@ class AppsRepository(
             manifestConfig.manifestUrl + option,
             "",
             true
-        ).getOrNull() ?: emptyList()
+        ).getOrNull() ?: emptyList() // .getOrThrow() ?: emptyList()
 
         return remoteApps.map { remote ->
             val installed = getInstalledPackageInfo(remote.packageName)

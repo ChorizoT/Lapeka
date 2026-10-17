@@ -32,6 +32,7 @@ import fr.birdywood.lapeka.ui.theme.GradientBackgroundBrush
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import fr.birdywood.lapeka.R
+import fr.birdywood.lapeka.utils.AppPreferences
 import kotlin.time.Duration.Companion.milliseconds
 
 
@@ -47,13 +48,12 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "list"
     val context = LocalContext.current
-    val prefSystem = remember { fr.birdywood.lapeka.birdyauth.PreferenceSystem(context) }
-    var welcomeDone by remember { mutableStateOf(prefSystem.get("welcomeDone", false)) }
-    val lastVersionCode = remember { prefSystem.get("lastVersionCode", -1) }
+    var welcomeDone by remember { mutableStateOf(AppPreferences.welcomeDone) }
+    val lastVersionCode = remember { AppPreferences.lastVersionCode }
     val downloadUrl = stringResource(R.string.app_homepage)
     val shareMessage = stringResource(R.string.share_message, downloadUrl)
     val shareTitle = stringResource(R.string.share_title)
-    val labs = remember { prefSystem.get("labs", false) }
+    val labs by remember { mutableStateOf(AppPreferences.labs) }
 
     var showDialog by remember {
         mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE)
@@ -67,7 +67,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
 
     if (!welcomeDone) {
         WelcomeScreen(onGetStarted = {
-            prefSystem.set("welcomeDone", true)
+            AppPreferences.welcomeDone = true
             welcomeDone = true
         })
     } else if (uiStateAccount.account != null) {
@@ -89,8 +89,8 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                             viewModel.setSearchQuery(newValue)
                             // C'est ici que vous pouvez déclencher le filtrage de vos produits à la volée !
                         },
-                        onShareClick = {viewModel.shareLapeka()},
-                        onSettingsClick = {showSettings = true}
+                        onShareClick = { viewModel.shareLapeka() },
+                        onSettingsClick = { showSettings = true }
                     )
                 } else {
                     TopAppBar(
@@ -110,7 +110,8 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                                     contentDescription = stringResource(R.string.action_refresh)
                                 )
                             }
-                            IconButton(onClick = {viewModel.shareLapeka()
+                            IconButton(onClick = {
+                                viewModel.shareLapeka()
                             }) {
                                 Icon(
                                     painterResource(R.drawable.share_24),
@@ -252,19 +253,17 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
         WhatsNewDialog(
             versionName = BuildConfig.VERSION_NAME,
             onDismiss = {
-                showDialog = false; scope.launch {
-                prefSystem.set(
-                    "lastVersionCode",
-                    BuildConfig.VERSION_CODE
-                )
-            }
+                showDialog = false;
+                scope.launch {
+                    AppPreferences.lastVersionCode = BuildConfig.VERSION_CODE
+                }
             }
         )
     }
     LaunchedEffect(lastVersionCode) {
         Log.d("Lapeka", "lastVersionCode: $lastVersionCode")
         if (lastVersionCode == -1) {
-            prefSystem.set("lastVersionCode", BuildConfig.VERSION_CODE)
+            AppPreferences.lastVersionCode = BuildConfig.VERSION_CODE
         }
     }
 

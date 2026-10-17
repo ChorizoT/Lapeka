@@ -19,6 +19,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import kotlin.jvm.java
+import androidx.core.content.edit
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 
 class BirdyAuth (val ctx: Context) {
@@ -105,9 +108,9 @@ class BirdyAuth (val ctx: Context) {
                 }
 
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             Log.e(TAG, "Network error during check", e)
-            throw e
+            loggingFailed(e.message ?: "Network error")
         }
     }
 
@@ -130,7 +133,7 @@ class BirdyAuth (val ctx: Context) {
                     false
                 }
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             Log.e(TAG, "Authorization check failed", e)
             false
         }
@@ -162,10 +165,11 @@ class BirdyAuth (val ctx: Context) {
     ): Result<T?> = withContext(Dispatchers.IO) {
 
         runCatching {
-            Log.d(TAG, "$method $url")
+            val validUrl = ensureValidUrl(url)
+            Log.d(TAG, "$method $validUrl")
             val requestBody = if (method == "GET" || method == "HEAD") null else body.toRequestBody("application/json".toMediaType())
             val requestBuilder = Request.Builder()
-                .url(url)
+                .url(validUrl)
                 .method(method, requestBody)
                 .addHeader("Accept", "application/json")
                 .addHeader("User-Agent", "Lapeka Agent")
@@ -194,6 +198,18 @@ class BirdyAuth (val ctx: Context) {
     }
 }
 
+fun ensureValidUrl(url: String): String {
+    val trimmed = url.trim()
+    if (trimmed.isEmpty()) return trimmed
+    return if (!trimmed.startsWith("http://", ignoreCase = true) &&
+        !trimmed.startsWith("https://", ignoreCase = true)
+    ) {
+        "https://$trimmed"
+    } else {
+        trimmed
+    }
+}
+
 @JsonClass(generateAdapter = true)
 data class Account(
     val _id:String,
@@ -218,27 +234,21 @@ data class Authorization(
 )
 
 
-class PreferenceSystem (val ctx: Context) {
+class PreferenceSystem (val ctx: Context, val name: String = "birdyauth_settings") {
     private val preferences: SharedPreferences =
-        ctx.getSharedPreferences("Findu", Context.MODE_PRIVATE)
+        ctx.getSharedPreferences(name, Context.MODE_PRIVATE)
 
     fun <T> set(key: String, value: T) {
-        val editor: SharedPreferences.Editor = preferences.edit()
-        when (value) {
-            is String -> editor.putString(key, value as String)
-            is Int -> editor.putInt(key, value as Int)
-            is Boolean -> editor.putBoolean(key, value as Boolean)
-            is Float -> editor.putFloat(key, value as Float)
-            is Long -> editor.putLong(key, value as Long)
-            else -> throw UnsupportedOperationException("Not yet implemented")
-        }
-        editor.apply()
-
-        /*(ctx as? Activity)?.let { activity ->
-            activity.runOnUiThread {
-                activity.recreate()
+        preferences.edit {
+            when (value) {
+                is String -> putString(key, value as String)
+                is Int -> putInt(key, value as Int)
+                is Boolean -> putBoolean(key, value as Boolean)
+                is Float -> putFloat(key, value as Float)
+                is Long -> putLong(key, value as Long)
+                else -> throw UnsupportedOperationException("Not yet implemented")
             }
-        }*/
+        }
     }
     fun <T> get(key: String, defaultValue: T): T {
         return when (defaultValue) {

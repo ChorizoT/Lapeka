@@ -95,6 +95,7 @@ import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.data.AppStatus
 import fr.birdywood.lapeka.data.FeaturedApp
 import fr.birdywood.lapeka.data.TrackedApp
+import fr.birdywood.lapeka.utils.AppPreferences
 import java.text.DateFormat.getDateInstance
 import java.util.Date
 
@@ -111,8 +112,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
     val context = LocalContext.current
     val state = rememberLazyListState()
 
-    val prefSystem = remember { fr.birdywood.lapeka.birdyauth.PreferenceSystem(context) }
-    val labs = remember { prefSystem.get("labs", false) }
+    val labs by remember { mutableStateOf(AppPreferences.labs) }
 
 
     Column {
