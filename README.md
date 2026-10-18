@@ -17,7 +17,12 @@
 
 ## Download
 
-You can download the app's APK on the homepage : [https://lapeka.labs.birdywood.fr](https://lapeka.labs.birdywood.fr).
+There are 2 versions of the app :
+#### The FULL app (recommended) :
+You can download the app's APK on the homepage : [https://lapeka.labs.birdywood.fr](https://lapeka.labs.birdywood.fr)
+
+#### The FOSS version :
+You can download the FOSS version in GitHub's Release : https://github.com/Chorizot/Lapeka/releases/latest
 
 ## Key Features
 

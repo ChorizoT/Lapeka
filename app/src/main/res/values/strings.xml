@@ -91,4 +91,6 @@
     <string name="labs_subtitle">New experimental UI</string>
     <string name="action_share">Share Lapeka</string>
     <string name="labs_title">Lapeka Labs</string>
+    <string name="foss_url">URL</string>
+    <string name="foss_enter_url">Enter manifest URL</string>
 </resources>

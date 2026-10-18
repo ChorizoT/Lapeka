@@ -203,12 +203,14 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                     }
                 }
             } else {
-                items(uiState.apps.filter {
-                    (it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(
-                        search
-                    ))
-                    /*&& (app.remote.id != "lapeka" || app.status != AppStatus.UP_TO_DATE)*/
-                }, key = { it.remote.id }) { app ->
+                items(
+                    uiState.apps
+                        .filter {
+                            it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(search)
+                        }
+                        .sortedByDescending { it.status == AppStatus.UPDATE_AVAILABLE },
+                    key = { it.remote.id }
+                ) { app ->
                     AppCard(
                         app = app,
                         onAction = { viewModel.installOrUpdate(app) })

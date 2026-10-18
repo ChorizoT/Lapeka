@@ -179,22 +179,24 @@ fun SettingsSheet(
                         AppPreferences.showFeaturedApps
                     )
                 }
-                SettingsSwitchTile(
-                    title = stringResource(R.string.featured_apps),
-                    subtitle = stringResource(R.string.featured_apps_subtitle),
-                    checked = show_featured_apps,
-                    onCheckedChange = {
-                        show_featured_apps = it
-                        scope.launch {
-                            AppPreferences.showFeaturedApps = it
-                            delay(200.milliseconds)
-                            _onDismiss()
-                            activity?.finish()
-                        }
-                    },
-                    icon = painterResource(R.drawable.editor_choice_24),
-                    position = TilePosition.END
-                )
+                if (!BuildConfig.IS_FOSS) {
+                    SettingsSwitchTile(
+                        title = stringResource(R.string.featured_apps),
+                        subtitle = stringResource(R.string.featured_apps_subtitle),
+                        checked = show_featured_apps,
+                        onCheckedChange = {
+                            show_featured_apps = it
+                            scope.launch {
+                                AppPreferences.showFeaturedApps = it
+                                delay(200.milliseconds)
+                                _onDismiss()
+                                activity?.finish()
+                            }
+                        },
+                        icon = painterResource(R.drawable.editor_choice_24),
+                        position = TilePosition.END
+                    )
+                }
             }
 
 //            item {
@@ -259,9 +261,6 @@ fun SettingsSheet(
                 )
             }
 
-//            item {
-//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-//            }
             // --- SECTION MISES À JOUR ---
             SettingsSection(title = titleUpdate) {
                 var buttonEnabled = true
@@ -282,9 +281,6 @@ fun SettingsSheet(
                 )
             }
 
-//            item {
-//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-//            }
             // --- SECTION AUTRES ---
             SettingsSection(title = titleOther) {
                 val context = LocalContext.current
@@ -346,7 +342,7 @@ fun SettingsSheet(
                 )
                 SettingsTile(
                     title = stringResource(R.string.version_actuelle),
-                    subtitle = BuildConfig.VERSION_NAME,
+                    subtitle = "${BuildConfig.VERSION_NAME}${if (BuildConfig.IS_FOSS) "-foss" else ""}",
                     icon = painterResource(R.drawable.info_24),
                     onClick = null,
                     position = TilePosition.END

@@ -3,6 +3,7 @@ package fr.birdywood.lapeka.utils
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.R
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -33,7 +34,7 @@ object AppPreferences {
     var welcomeDone: Boolean by pref(false)
     var labs: Boolean by pref(true)
     var lastVersionCode: Int by pref(-1)
-    var showFeaturedApps: Boolean by pref(true)
+    var showFeaturedApps: Boolean by pref({ !BuildConfig.IS_FOSS })
     var manifestUrl: String by pref("https://lapeka.labs.birdywood.fr/data")
 
 }

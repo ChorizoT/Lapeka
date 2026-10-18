@@ -14,8 +14,20 @@ android {
         applicationId = "fr.birdywood.lapeka"
         minSdk = 26
         targetSdk = 37
-        versionCode = 21
-        versionName = "1.7.1"
+        versionCode = 22
+        versionName = "2.0.0"
+    }
+
+    flavorDimensions += "version"
+    productFlavors {
+        create("full") {
+            buildConfigField("Boolean", "IS_FOSS", "false")
+        }
+        create("foss") {
+            applicationIdSuffix = ".foss"
+
+            buildConfigField("Boolean", "IS_FOSS", "true")
+        }
     }
 
     buildFeatures {
@@ -36,6 +48,8 @@ android {
             isMinifyEnabled = false
         }
     }
+
+
 }
 
 dependencies {

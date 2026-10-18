@@ -54,6 +54,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val shareMessage = stringResource(R.string.share_message, downloadUrl)
     val shareTitle = stringResource(R.string.share_title)
     val labs by remember { mutableStateOf(AppPreferences.labs) }
+    val IS_FOSS by remember { mutableStateOf(BuildConfig.IS_FOSS) }
 
     var showDialog by remember {
         mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE)
@@ -65,12 +66,18 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
         }
     }
 
-    if (!welcomeDone) {
+    if (!welcomeDone && IS_FOSS) {
+        WelcomeScreenFOSS(onGetStarted = {
+            viewModel.setManifestUrl(it)
+            AppPreferences.welcomeDone = true
+            welcomeDone = true
+        })
+    } else if (!welcomeDone) {
         WelcomeScreen(onGetStarted = {
             AppPreferences.welcomeDone = true
             welcomeDone = true
         })
-    } else if (uiStateAccount.account != null) {
+    } else if (uiStateAccount.account != null || IS_FOSS) {
         Scaffold(
             modifier = Modifier
                 //.padding(WindowInsets.navigationBars.asPaddingValues())
@@ -133,24 +140,26 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
                 SnackbarHost(hostState = snackbarHostState)
             },
             bottomBar = {
-                val accountPainter = if (uiStateAccount.account?.img?.isNotEmpty() == true) {
-                    rememberImagePainter(uiStateAccount.account?.img)
-                } else {
-                    null
-                }
+                if (!IS_FOSS) {
+                    val accountPainter = if (uiStateAccount.account?.img?.isNotEmpty() == true) {
+                        rememberImagePainter(uiStateAccount.account?.img)
+                    } else {
+                        null
+                    }
 
-                Navbar(
-                    currentRoute = currentRoute,
-                    accountPainter = accountPainter,
-                    modifier = Modifier.padding(WindowInsets.navigationBars.asPaddingValues()),
-                ) { route ->
-                    if (currentRoute != route) {
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
+                    Navbar(
+                        currentRoute = currentRoute,
+                        accountPainter = accountPainter,
+                        modifier = Modifier.padding(WindowInsets.navigationBars.asPaddingValues()),
+                    ) { route ->
+                        if (currentRoute != route) {
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 }

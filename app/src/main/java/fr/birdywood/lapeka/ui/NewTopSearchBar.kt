@@ -62,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.R
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -79,6 +80,7 @@ fun NewTopSearchBar(
     val focusManager = LocalFocusManager.current
     val isKeyboardVisible = WindowInsets.isImeVisible
     var isMenuExpanded by remember { mutableStateOf(false) }
+    val IS_FOSS by remember { mutableStateOf(BuildConfig.IS_FOSS) }
 
     LaunchedEffect(isKeyboardVisible) {
         if (!isKeyboardVisible && isExpanded) {
@@ -229,7 +231,7 @@ fun NewTopSearchBar(
                 exit = fadeOut(animationSpec = tween(800)) + scaleOut(targetScale = 0.9f)
             ) {
                 Text(
-                    text = "Lapeka",
+                    text = "Lapeka ${if (IS_FOSS) "FOSS" else ""}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
