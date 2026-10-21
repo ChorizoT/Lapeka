@@ -17,10 +17,13 @@
 
 ## Screenshots
 
-![welcomescreen_light.jpg](assets/welcomescreen_light.jpg?raw=true) ![homescreen_light.jpg](assets/homescreen_light.jpg?raw=true)
+<p align="center" style="display:flex">
+  <img src="assets/welcomescreen_light.jpg?raw=true" width="200"/>
+  <img src="assets/homescreen_light.jpg?raw=true" width="200"/>
 
-![welcomescreen_dark.jpg](assets/welcomescreen_dark.jpg?raw=true) ![homescreen_dark.jpg](assets/homescreen_dark.jpg?raw=true)
-
+   <img src="assets/welcomescreen_dark.jpg?raw=true" width="200"/>
+  <img src="assets/homescreen_dark.jpg?raw=true" width="200"/>
+</p>
 
 ## Download
 
