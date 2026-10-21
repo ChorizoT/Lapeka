@@ -14,6 +14,7 @@
 </div>
 
 **Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that allows you to install and update apps from APKs.
+<br>This app supports **English** and **French**.
 
 ## Screenshots
 
