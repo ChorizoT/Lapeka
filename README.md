@@ -13,7 +13,7 @@
 ```
 </div>
 
-**Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that an app that allows you to install and update apps from APKs.
+**Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that allows you to install and update apps from APKs.
 
 ## Screenshots
 
@@ -27,11 +27,11 @@
 
 ## Download
 
-There are 2 versions of the app :
-#### The FULL app (recommended) :
+There are 2 versions of the app:
+#### The FULL app (recommended)
 You can download the app's APK on the homepage : [https://lapeka.labs.birdywood.fr](https://lapeka.labs.birdywood.fr)
 
-#### The FOSS version :
+#### The FOSS version
 You can download the FOSS version in GitHub's Release : https://github.com/Chorizot/Lapeka/releases/latest
 
 ## Key Features
@@ -47,13 +47,13 @@ You can download the FOSS version in GitHub's Release : https://github.com/Chori
 
 ## How it works
 
-1. **Authentication**: Sign in with your BirdyAuth account to access the BirdyWood's app list (by default).
+1. **Authentication**: Sign in with your BirdyAuth account to access BirdyWood's app list (by default).
 2. **Manifest Tracking**: The app polls your configured JSON manifest endpoint and compares `versionCode` against installed packages.
 3. **Installation**: When you trigger an update or install, Lapeka downloads the APK, verifies the SHA-256 checksum, and initiates a `PackageInstaller` session.
 
 ## Configuration
 
-You can set your own manifest endpoint URL in the **Settings** section.
+You can set your own manifest endpoint URL in the **Settings** section (available in both versions).
 
 Your endpoint should return a JSON array with the following structure:
 
@@ -75,7 +75,7 @@ Your endpoint should return a JSON array with the following structure:
 ]
 ```
 
-If you want to set it to the default value, clear the cache and data of the app.
+If you want to set it to the default value, clear the app's cache and data.
 
 ## Credits
 
