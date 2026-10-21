@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent): Boolean {
         if (intent.action == Intent.ACTION_VIEW) {
             val data = intent.data
-            if (data?.scheme == "lapeka" && data.host == "auth") {
+            if (data?.scheme == "lapeka" && data.host == "auth" && !BuildConfig.IS_FOSS) {
                 val token = data.getQueryParameter("token")
                 if (token != null) {
                     ba.token = token

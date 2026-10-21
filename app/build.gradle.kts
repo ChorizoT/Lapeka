@@ -14,19 +14,21 @@ android {
         applicationId = "fr.birdywood.lapeka"
         minSdk = 26
         targetSdk = 37
-        versionCode = 22
-        versionName = "2.0.0"
+        versionCode = 23
+        versionName = "2.1.0"
     }
 
     flavorDimensions += "version"
     productFlavors {
         create("full") {
             buildConfigField("Boolean", "IS_FOSS", "false")
+            manifestPlaceholders["deepLinkHost"] = "auth"
         }
         create("foss") {
             applicationIdSuffix = ".foss"
 
             buildConfigField("Boolean", "IS_FOSS", "true")
+            manifestPlaceholders["deepLinkHost"] = "disabled-deep-link"
         }
     }
 
@@ -87,7 +89,4 @@ dependencies {
     // Core
     implementation("androidx.core:core-ktx:1.19.0")
     implementation("com.google.android.material:material:1.14.0")
-
-
-
 }

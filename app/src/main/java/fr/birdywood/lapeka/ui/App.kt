@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.utils.AppPreferences
+import fr.birdywood.lapeka.utils.isOffline
 import kotlin.time.Duration.Companion.milliseconds
 
 
@@ -55,6 +56,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
     val shareTitle = stringResource(R.string.share_title)
     val labs by remember { mutableStateOf(AppPreferences.labs) }
     val IS_FOSS by remember { mutableStateOf(BuildConfig.IS_FOSS) }
+    var isOffline by remember { mutableStateOf(context.isOffline) }
 
     var showDialog by remember {
         mutableStateOf(lastVersionCode != -1 && lastVersionCode < BuildConfig.VERSION_CODE)
@@ -65,8 +67,9 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
             snackbarHostState.showSnackbar(message)
         }
     }
-
-    if (!welcomeDone && IS_FOSS) {
+    if (isOffline){
+        OfflineState { isOffline = context.isOffline }
+    } else if (!welcomeDone && IS_FOSS) {
         WelcomeScreenFOSS(onGetStarted = {
             viewModel.setManifestUrl(it)
             AppPreferences.welcomeDone = true
@@ -242,7 +245,7 @@ fun App(viewModel: ListViewModel = viewModel(), accountViewModel: AccountViewMod
             }
         }
     } else if (uiStateAccount.hasProblem) {
-        CantLogIn(onLogin = { accountViewModel.login() })
+        CantLogIn(onLogin = { accountViewModel.login()/*disconnectAndLogin()*/ })
     } else {
         NotLoggedInView(onLogin = { accountViewModel.login() })
     }

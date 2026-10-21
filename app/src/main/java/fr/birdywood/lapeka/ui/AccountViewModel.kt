@@ -31,6 +31,10 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
         birdyAuth.redirectToLogin()
     }
 
+    fun disconnectAndLogin(){
+        birdyAuth.redirectToDisconnectAndLogin()
+    }
+
     fun checkAuth() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)

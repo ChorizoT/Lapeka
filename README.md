@@ -15,6 +15,13 @@
 
 **Lapeka** is a modern Android application built with Kotlin and Jetpack Compose that an app that allows you to install and update apps from APKs.
 
+## Screenshots
+
+![welcomescreen_light.jpg](assets/welcomescreen_light.jpg?raw=true) ![homescreen_light.jpg](assets/homescreen_light.jpg?raw=true)
+
+![welcomescreen_dark.jpg](assets/welcomescreen_dark.jpg?raw=true) ![homescreen_dark.jpg](assets/homescreen_dark.jpg?raw=true)
+
+
 ## Download
 
 There are 2 versions of the app :
@@ -40,10 +47,6 @@ You can download the FOSS version in GitHub's Release : https://github.com/Chori
 1. **Authentication**: Sign in with your BirdyAuth account to access the BirdyWood's app list (by default).
 2. **Manifest Tracking**: The app polls your configured JSON manifest endpoint and compares `versionCode` against installed packages.
 3. **Installation**: When you trigger an update or install, Lapeka downloads the APK, verifies the SHA-256 checksum, and initiates a `PackageInstaller` session.
-
-## Manifest JSON Schema
-
-
 
 ## Configuration
 

@@ -149,6 +149,16 @@ class BirdyAuth (val ctx: Context) {
         intent.launchUrl(ctx, loginUrl.toUri())
     }
 
+    fun redirectToDisconnectAndLogin(){
+        val deeplink = "lapeka://auth"
+        val encodedDeeplink = Uri.encode(deeplink)
+        val loginUrl = "$HOST/disconnect?redirect=$encodedDeeplink"
+
+        val intent = CustomTabsIntent.Builder().build()
+        intent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.launchUrl(ctx, loginUrl.toUri())
+    }
+
     fun editAccount(){
         val url = HOST
 

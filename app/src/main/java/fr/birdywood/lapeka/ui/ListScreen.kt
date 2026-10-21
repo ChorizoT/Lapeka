@@ -301,6 +301,33 @@ fun EmptyState(onConfigure: () -> Unit) {
 }
 
 @Composable
+fun OfflineState(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(painterResource(R.drawable.globe_2_cancel_24),modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.error, contentDescription = null)
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            stringResource(R.string.text_offline),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.subtitle_offline),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
+    }
+}
+
+@Composable
 private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val appCond = app.status == AppStatus.DOWNLOADING || app.status == AppStatus.INSTALLING
@@ -578,11 +605,13 @@ private fun versionSubtitle(ctx: Context, app: TrackedApp): AnnotatedString {
         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
             append(ctx.getString(R.string.state_installed))
         }
+        append(" ")
         append(installed)
 
         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
             append("\n" + ctx.getString(R.string.state_latest))
         }
+        append(" ")
         append(app.remote.versionName)
     }
 }

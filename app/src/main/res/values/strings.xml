@@ -93,4 +93,6 @@
     <string name="labs_title">Lapeka Labs</string>
     <string name="foss_url">URL</string>
     <string name="foss_enter_url">Enter manifest URL</string>
+    <string name="text_offline">You\'re offline</string>
+    <string name="subtitle_offline">To view apps and install/update them, please connect to the internet.</string>
 </resources>
