@@ -244,7 +244,7 @@ data class Authorization(
 )
 
 
-class PreferenceSystem (val ctx: Context, val name: String = "birdyauth_settings") {
+private class PreferenceSystem (val ctx: Context, val name: String = "birdyauth_settings") {
     private val preferences: SharedPreferences =
         ctx.getSharedPreferences(name, Context.MODE_PRIVATE)
 

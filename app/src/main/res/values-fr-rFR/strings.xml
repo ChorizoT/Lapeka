@@ -91,4 +91,10 @@
     <string name="foss_enter_url">Entrez l\'URL du manifest</string>
     <string name="text_offline">Vous êtes hors-ligne</string>
     <string name="subtitle_offline">Pour visualiser les apps et les installer/mettre à jour, veuillez vous connecter à internet.</string>
+    <string name="account_birthday_today">N\'oubliez pas votre anniversaire !</string>
+    <plurals name="account_birthday_not_today">
+        <item quantity="one">N\'oubliez pas votre anniversaire dans %1$d jour.</item>
+        <item quantity="many">N\'oubliez pas votre anniversaire dans %1$d de jours.</item>
+        <item quantity="other">N\'oubliez pas votre anniversaire dans %1$d jours.</item>
+    </plurals>
 </resources>

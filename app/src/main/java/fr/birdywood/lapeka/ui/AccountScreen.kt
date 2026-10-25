@@ -1,24 +1,37 @@
 package fr.birdywood.lapeka.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import fr.birdywood.lapeka.birdyauth.Account
 import fr.birdywood.lapeka.R
+import fr.birdywood.lapeka.ui.theme.LapekaTheme
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun AccountScreen(
@@ -65,6 +78,43 @@ fun LoggedInView(
     onRefresh: () -> Unit,
     onEdit: () -> Unit
 ) {
+    val monthFormatter = remember { SimpleDateFormat("MMM", Locale.getDefault()) }
+    val dayFormatter = remember { SimpleDateFormat("dd", Locale.getDefault()) }
+
+    val birthDate = remember(account.birthdate) {
+        if (account.birthdate != 0L) Date(account.birthdate * 1000) else null
+    }
+
+    val daysUntilBirthday = remember(account.birthdate) {
+        if (account.birthdate != 0L) {
+            val today = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            val birthCalendar = Calendar.getInstance().apply { timeInMillis = account.birthdate * 1000 }
+
+            val nextBirthday = Calendar.getInstance().apply {
+                set(Calendar.YEAR, today.get(Calendar.YEAR))
+                set(Calendar.MONTH, birthCalendar.get(Calendar.MONTH))
+                set(Calendar.DAY_OF_MONTH, birthCalendar.get(Calendar.DAY_OF_MONTH))
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            if (nextBirthday.before(today)) {
+                nextBirthday.add(Calendar.YEAR, 1)
+            }
+
+            val diff = nextBirthday.timeInMillis - today.timeInMillis
+            TimeUnit.MILLISECONDS.toDays(diff)
+        } else null
+    }
+
     Card(
         modifier = Modifier
             .fillMaxSize()
@@ -112,12 +162,70 @@ fun LoggedInView(
                 style = MaterialTheme.typography.bodyMedium
             )
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- COMPOSANT ANNIVERSAIRE FAÇON WIDGET ---
+            if (birthDate != null && daysUntilBirthday != null) {
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge, // Bords très arrondis
+                    color = MaterialTheme.colorScheme.secondaryContainer, // Fond teinté pastel
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Icône Calendrier stylisée
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            modifier = Modifier.size(64.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = monthFormatter.format(birthDate).replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Text(
+                                    text = dayFormatter.format(birthDate),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Texte principal
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = if (daysUntilBirthday == 0L) stringResource(R.string.account_birthday_today) else pluralStringResource(
+                                    R.plurals.account_birthday_not_today,
+                                    daysUntilBirthday.toInt(), daysUntilBirthday
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                //color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+            // ------------------------------------------
+
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),//.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                //verticalAlignment = Alignment.Bottom
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
                     onClick = onEdit,
@@ -145,7 +253,27 @@ fun LoggedInView(
     }
 }
 
+
+@Preview
 @Composable
+fun LoggedInViewPreview() {
+    LapekaTheme {
+        LoggedInView(Account(
+            "id",
+            "username",
+            "firstname",
+            "lastname",
+            "email",
+            "img",
+            listOf(),
+            10,
+            "creationDate",
+            "lastUpdated"
+        ), {}, {}, {})
+    }
+}
+
+        @Composable
 fun NotLoggedInView(onLogin: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -182,6 +310,7 @@ fun NotLoggedInView(onLogin: () -> Unit) {
         }
     }
 }
+
 
 @Composable
 fun CantLogIn(onLogin: () -> Unit){

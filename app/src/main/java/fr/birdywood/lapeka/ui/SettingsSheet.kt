@@ -59,7 +59,6 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.core.net.toUri
 import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.R
-import fr.birdywood.lapeka.birdyauth.PreferenceSystem
 import fr.birdywood.lapeka.utils.AppPreferences
 import fr.birdywood.lapeka.utils.openAppNotificationSettings
 import kotlinx.coroutines.delay
@@ -77,7 +76,6 @@ fun SettingsSheet(
 ) {
     var url by remember { mutableStateOf(initialUrl) }
     val ctx = LocalContext.current
-    val prefSystem by remember { mutableStateOf(PreferenceSystem(ctx)) }
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     val skipPartiallyExpanded by rememberSaveable { mutableStateOf(true) }
@@ -95,10 +93,7 @@ fun SettingsSheet(
         stringResource(R.string.settings_select_light),
         stringResource(R.string.settings_select_dark)
     )
-    val currentDarkMode = prefSystem.get(
-        "darkmode",
-        stringResource(R.string.settings_select_system_mode)
-    )
+    var currentDarkMode by remember { mutableStateOf(AppPreferences.themeMode)}
     var selectedDarkModeOption by remember {
         mutableStateOf(AppPreferences.themeMode)
     }
@@ -238,7 +233,7 @@ fun SettingsSheet(
                     title = stringResource(R.string.dark_mode),
                     subtitle = selectedDarkModeOption,
                     icon = painterResource(R.drawable.dark_mode_24),
-                    onClick = { showDarkModeDialog = true },
+                    onClick = { currentDarkMode = selectedDarkModeOption; showDarkModeDialog = true },
                     position = TilePosition.MIDDLE
                 )
 
@@ -425,7 +420,7 @@ fun SettingsSheet(
                 TextButton(
                     onClick = {
                         showDarkModeDialog = false
-                        selectedDarkModeOption = currentDarkMode // Reset on cancel
+                        selectedDarkModeOption = currentDarkMode// Reset on cancel
                     }
                 ) {
                     Text(stringResource(android.R.string.cancel))

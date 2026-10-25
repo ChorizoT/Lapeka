@@ -14,8 +14,8 @@ android {
         applicationId = "fr.birdywood.lapeka"
         minSdk = 26
         targetSdk = 37
-        versionCode = 23
-        versionName = "2.1.0"
+        versionCode = 24
+        versionName = "2.2.0"
     }
 
     flavorDimensions += "version"
@@ -58,7 +58,7 @@ dependencies {
     // Compose
     implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.browser:browser:1.10.0")
-    implementation("androidx.compose.foundation:foundation:1.11.4")
+    implementation("androidx.compose.foundation:foundation:1.12.1")
     implementation("androidx.compose.material3:material3:1.5.0-alpha23")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.11.4")

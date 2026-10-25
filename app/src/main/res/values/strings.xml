@@ -95,4 +95,9 @@
     <string name="foss_enter_url">Enter manifest URL</string>
     <string name="text_offline">You\'re offline</string>
     <string name="subtitle_offline">To view apps and install/update them, please connect to the internet.</string>
+    <string name="account_birthday_today">Don\'t forget your birthday!</string>
+    <plurals name="account_birthday_not_today">
+        <item quantity="one">Don\'t forget your birthday in %1$d day.</item>
+        <item quantity="other">Don\'t forget your birthday in %1$d days.</item>
+    </plurals>
 </resources>
