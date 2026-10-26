@@ -6,3 +6,6 @@
 /.idea/
 /.kotlin/
 /app/release/
+local.properties
+*.jks
+*.keystore
