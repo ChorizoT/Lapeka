@@ -4,36 +4,30 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import fr.birdywood.lapeka.birdyauth.BirdyAuth
+import java.io.IOException
 
 class AppsRepository(
     private val packageManager: PackageManager,
     private val manifestConfig: ManifestConfig,
     private val apiService: AppsApiService = NetworkModule.appsApiService
 ) {
-    val birdyAuth = BirdyAuth(manifestConfig.context)
-
     suspend fun fetchTrackedApps(forceReload: Boolean = false): List<TrackedApp> {
-         require(manifestConfig.hasManifestUrl) { "Manifest URL is not configured" }
+        if (!manifestConfig.hasManifestUrl) return emptyList()
 
-        //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
-        val option = if (forceReload) "?force=true" else ""
-        val remoteApps = birdyAuth.request<List<RemoteAppInfo>>(
-            "GET",
-            manifestConfig.manifestUrl + option,
-            "",
-            true
-        ).getOrNull() ?: emptyList() // .getOrThrow() ?: emptyList()
+        val response = apiService.getApps(manifestConfig.manifestUrl, force = forceReload)
+        if (!response.isSuccessful) throw IOException("Manifest fetch failed: HTTP ${response.code()}")
 
+        val remoteApps = response.body() ?: emptyList()
         return remoteApps.map { remote ->
             val installed = getInstalledPackageInfo(remote.packageName)
             val installedVersionCode = installed?.let { getVersionCode(it) }
 
             val status = when {
-                installed == null -> AppStatus.NOT_INSTALLED
+                installed == null -> AppStatus.NotInstalled
                 installedVersionCode != null && installedVersionCode < remote.versionCode ->
-                    AppStatus.UPDATE_AVAILABLE
+                    AppStatus.UpdateAvailable
 
-                else -> AppStatus.UP_TO_DATE
+                else -> AppStatus.UpToDate
             }
 
             TrackedApp(
@@ -47,13 +41,11 @@ class AppsRepository(
     }
 
     suspend fun fetchFeaturedApps(): List<FeaturedApp> {
-        //val remoteApps = apiService.getApps(manifestConfig.manifestUrl)
-        var apps = birdyAuth.request<List<FeaturedApp>>(
-            "GET",
-            "https://vps.birdywood.fr/project/projects.json",
-            "",
-            false
-        ).getOrNull() ?: emptyList()
+        val response = apiService.getFeaturedApps()
+        if (!response.isSuccessful) throw IOException("Featured fetch failed: HTTP ${response.code()}")
+
+        var apps = response.body() ?: emptyList()
+
         apps = apps.filter { it.img != "" && !it.img.substringBefore('?').substringBefore('#').substringAfterLast('.', "").equals("svg", ignoreCase = true)} //Exclude apps without image and apps with image in SVG
         apps = apps.filter { it.id != "lapeka" } // Remove Lapeka app
         return apps

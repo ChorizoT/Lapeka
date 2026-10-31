@@ -27,9 +27,9 @@
     <string name="state_up_to_date">À jour</string>
     <string name="text_api_url">URL de l\'API</string>
     <string name="text_manifest_endpoint">Endpoint du manifeste</string>
-    <string name="text_connect_to_birdyauth">Se connecter à BirdyAuth</string>
-    <string name="text_log_in_to_manage_your_account_and_access_more_features">Connectez-vous pour gérer votre compte et accéder à plus de fonctionnalités.</string>
-    <string name="action_login_with_birdyauth">Se connecter avec BirdyAuth</string>
+    <string name="text_connect_to_birdyauth">Votre compte BirdyAuth</string>
+    <string name="text_log_in_to_manage_your_account_and_access_more_features">Connectez-vous pour gérer votre compte et accéder à l\'application.</string>
+    <string name="action_login_with_birdyauth">Se connecter</string>
     <string name="version">Version</string>
     <string name="error_title">Oups, un petit problème est survenu !</string>
     <string name="error_message">Il semblerait que vous n\'ayez pas l\'autorisation d\'accéder à cette app, ou qu\'un problème technique soit survenu de notre côté.</string>
@@ -56,7 +56,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_title">Bienvenue sur Lapeka</string>
-    <string name="welcome_desc">Votre gestionnaire d\'applications personnel. Suivez, téléchargez et mettez à jour vos apps facilement.</string>
+    <string name="welcome_desc">Votre gestionnaire d\'applications personnel : suivez, téléchargez et mettez à jour vos apps facilement.</string>
     <string name="action_get_started">Commencer</string>
     <string name="permission_notification_title">Restez informé</string>
     <string name="permission_notification_desc">Lapeka a besoin de l\'autorisation de notification pour vous montrer la progression de vos installations.</string>
@@ -97,4 +97,10 @@
         <item quantity="many">N\'oubliez pas votre anniversaire dans %1$d de jours.</item>
         <item quantity="other">N\'oubliez pas votre anniversaire dans %1$d jours.</item>
     </plurals>
+    <string name="filter_default">Toutes</string>
+    <string name="filter_installed">Installées</string>
+    <string name="filter_update">Mises à jour disponibles</string>
+    <string name="filter_not_installed">Non installées</string>
+    <string name="text_no_matching_app">Houston, les applications se sont volatilisées !</string>
+    <string name="action_share_shortcut">Partager</string>
 </resources>

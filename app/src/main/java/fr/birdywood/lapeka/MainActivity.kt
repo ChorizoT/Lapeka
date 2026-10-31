@@ -2,37 +2,37 @@ package fr.birdywood.lapeka
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.lifecycleScope
-import fr.birdywood.lapeka.birdyauth.BirdyAuth
+import fr.birdywood.lapeka.LapekaApp.Companion.auth
 import fr.birdywood.lapeka.ui.App
-import fr.birdywood.lapeka.ui.theme.LapekaTheme
 import fr.birdywood.lapeka.ui.theme.DefaultGradient
+import fr.birdywood.lapeka.ui.theme.LapekaTheme
 import fr.birdywood.lapeka.utils.AppPreferences
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 class MainActivity : ComponentActivity() {
-    private lateinit var ba: BirdyAuth
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        ba = BirdyAuth(this)
-        val handled = handleIntent(intent)
 
         AppPreferences.init(this)
+
+        if (savedInstanceState == null) handleIntent(intent)
+
+        lifecycleScope.launch {
+            auth.refresh()
+        }
+
         //val pref = PreferenceSystem(this)
 
         setContent {
@@ -56,17 +56,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
-        if (!handled) {
-            lifecycleScope.launch {
-                try {
-                    ba.check() {
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -74,26 +63,14 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    private fun handleIntent(intent: Intent): Boolean {
-        if (intent.action == Intent.ACTION_VIEW) {
-            val data = intent.data
-            if (data?.scheme == "lapeka" && data.host == "auth" && !BuildConfig.IS_FOSS) {
-                val token = data.getQueryParameter("token")
-                if (token != null) {
-                    ba.token = token
-                    lifecycleScope.launch {
-                        try {
-                            ba.check(){
-                                //show snackbar error with viewmodel . showErrorMessage
-                            }
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }
-                    return true
-                }
-            }
+    private fun handleIntent(intent: Intent) {
+        val uri = intent.data ?: return
+        if (auth.isAuthDeepLink(uri) && !BuildConfig.IS_FOSS) {
+            lifecycleScope.launch { val result = auth.handleDeepLink(uri)
+                result.onSuccess { Log.d("Lapeka", "DeepLink auth succeeded: $it") }
+                    .onFailure { Log.e("Lapeka", "DeepLink auth failed", it) } }
+        }else{
+            Log.e("Lapeka", "Not a BirdyAuth deeplink")
         }
-        return false
     }
 }

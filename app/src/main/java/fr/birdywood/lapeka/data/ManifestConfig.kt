@@ -11,17 +11,10 @@ import fr.birdywood.lapeka.utils.AppPreferences
  */
 class ManifestConfig(val context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("lapeka_config", Context.MODE_PRIVATE)
-
     var manifestUrl: String
-        get() = AppPreferences.manifestUrl//prefs.getString(KEY_MANIFEST_URL, "https://lapeka.labs.birdywood.fr/data") ?: ""
+        get() = AppPreferences.manifestUrl
         set(value)  { AppPreferences.manifestUrl = value }
 
     val hasManifestUrl: Boolean
         get() = manifestUrl.isNotBlank()
-
-    companion object {
-        private const val KEY_MANIFEST_URL = "manifest_url"
-    }
 }

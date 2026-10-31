@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,10 +38,13 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -56,6 +63,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.R
@@ -70,21 +78,15 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun SettingsSheet(
     viewModel: ListViewModel,
+    windowSizeClass: WindowSizeClass,
     initialUrl: String,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit
 ) {
-    var url by remember { mutableStateOf(initialUrl) }
     val ctx = LocalContext.current
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
-    val skipPartiallyExpanded by rememberSaveable { mutableStateOf(true) }
-    val sheetState = rememberBottomSheetState(
-        initialValue = SheetValue.Hidden,
-        enabledValues =
-            if (skipPartiallyExpanded) setOf(SheetValue.Hidden, SheetValue.Expanded)
-            else setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded),
-    )
+
 
     // State for the dark mode dialog
     var showDarkModeDialog by remember { mutableStateOf(false) }
@@ -93,278 +95,77 @@ fun SettingsSheet(
         stringResource(R.string.settings_select_light),
         stringResource(R.string.settings_select_dark)
     )
-    var currentDarkMode by remember { mutableStateOf(AppPreferences.themeMode)}
+    var currentDarkMode by remember { mutableStateOf(AppPreferences.themeMode) }
     var selectedDarkModeOption by remember {
         mutableStateOf(AppPreferences.themeMode)
     }
-    val _onDismiss: () -> Unit = {
-        scope.launch { sheetState.hide() }.invokeOnCompletion {
-            if (!sheetState.isVisible) {
-                onDismiss()
+
+
+     if (windowSizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+        val skipPartiallyExpanded by rememberSaveable { mutableStateOf(true) }
+        val sheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues =
+                if (skipPartiallyExpanded) setOf(SheetValue.Hidden, SheetValue.Expanded)
+                else setOf(SheetValue.Hidden, SheetValue.PartiallyExpanded, SheetValue.Expanded),
+        )
+
+        val _onDismiss: () -> Unit = {
+            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                if (!sheetState.isVisible) {
+                    onDismiss()
+                }
             }
         }
-    }
-
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        contentWindowInsets = { WindowInsets(0, 0, 0, 0) }
-    ) {
-        val titleDisplay = stringResource(R.string.settings_title_display)
-        val titleNetwork = stringResource(R.string.settings_title_network)
-        val titleUpdate = stringResource(R.string.settings_title_update)
-        val titleOther = stringResource(R.string.settings_title_other)
-        LazyColumn(
-            modifier = Modifier.padding(
-                start = 24.dp,
-                end = 24.dp,
-                bottom = 24.dp,
-                top = 0.dp
-            )
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            contentWindowInsets = { WindowInsets(0, 0, 0, 0) }
         ) {
-            stickyHeader {
-                Row(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                        .fillMaxWidth()
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) {}
-                        .padding(start = 0.dp, end = 0.dp, bottom = 16.dp, top = 0.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.action_settings),
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    IconButton(
-                        {
-                            _onDismiss()
-                        },
-                        modifier = Modifier
-                            .align(Alignment.CenterVertically)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.rounded_close_24),
-                            contentDescription = "Close"
-                        )
-                    }
+            SettingsContent(
+                viewModel,
+                initialUrl,
+                selectedDarkModeOption,
+                MaterialTheme.colorScheme.surfaceContainerLow,
+                onSave = { onSave(it) },
+                onDismiss = _onDismiss,
+                onShowDarkModeDialog = {
+                    currentDarkMode = selectedDarkModeOption
+                    showDarkModeDialog = true
                 }
-            }
-
-            // --- SECTION RESEAU ---
-            SettingsSection(title = titleNetwork) {
-                SettingsTextFieldTile(
-                    title = stringResource(R.string.text_manifest_endpoint),
-                    value = url,
-                    onValueSave = { newUrl ->
-                        url = newUrl; if (newUrl.isNotBlank()) onSave(newUrl)
-                    },
-                    label = stringResource(R.string.text_api_url),
-                    icon = painterResource(R.drawable.cloud_24),
-                    position = TilePosition.START
-                )
-                var show_featured_apps by remember {
-                    mutableStateOf(
-                        AppPreferences.showFeaturedApps
-                    )
-                }
-                if (!BuildConfig.IS_FOSS) {
-                    SettingsSwitchTile(
-                        title = stringResource(R.string.featured_apps),
-                        subtitle = stringResource(R.string.featured_apps_subtitle),
-                        checked = show_featured_apps,
-                        onCheckedChange = {
-                            show_featured_apps = it
-                            scope.launch {
-                                AppPreferences.showFeaturedApps = it
-                                delay(200.milliseconds)
-                                _onDismiss()
-                                activity?.finish()
-                            }
-                        },
-                        icon = painterResource(R.drawable.editor_choice_24),
-                        position = TilePosition.END
-                    )
-                }
-            }
-
-//            item {
-//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-//            }
-
-            // --- SECTION APPARENCE ---
-            SettingsSection(title = titleDisplay) {
-                var dynamicTheme by remember {
-                    mutableStateOf(
-                        AppPreferences.dynamicTheme
-                    )
-                }
-
-                var labs by remember {
-                    mutableStateOf(
-                        AppPreferences.labs
-                    )
-                }
-                SettingsSwitchTile(
-                    title = stringResource(R.string.dynamic_theme),
-                    subtitle = stringResource(R.string.dynamic_theme_subtitle),
-                    checked = dynamicTheme,
-                    onCheckedChange = {
-                        dynamicTheme = it
-                        scope.launch {
-                            AppPreferences.dynamicTheme = it
-                            delay(200.milliseconds)
-                            _onDismiss()
-                            delay(100.milliseconds)
-                            activity?.recreate()
-                        }
-                    },
-                    icon = painterResource(R.drawable.palette_24),
-                    position = TilePosition.START
-                )
-
-                SettingsTile(
-                    title = stringResource(R.string.dark_mode),
-                    subtitle = selectedDarkModeOption,
-                    icon = painterResource(R.drawable.dark_mode_24),
-                    onClick = { currentDarkMode = selectedDarkModeOption; showDarkModeDialog = true },
-                    position = TilePosition.MIDDLE
-                )
-
-                SettingsSwitchTile(
-                    title = stringResource(R.string.labs_title),
-                    subtitle = stringResource(R.string.labs_subtitle),
-                    checked = labs,
-                    onCheckedChange = {
-                        labs = it
-                        scope.launch {
-                            AppPreferences.labs = it
-                            delay(200.milliseconds)
-                            _onDismiss()
-                            delay(100.milliseconds)
-                            activity?.recreate()
-                        }
-                    },
-                    icon = painterResource(R.drawable.experiment_24),
-                    position = TilePosition.END
-                )
-            }
-
-            // --- SECTION MISES À JOUR ---
-            SettingsSection(title = titleUpdate) {
-                var buttonEnabled = true
-                SettingsTile(
-                    title = stringResource(R.string.rechercher_des_nouvelles_versions),
-                    icon = painterResource(R.drawable.rounded_refresh_24),
-                    onClick = {
-                        if (buttonEnabled) {
-                            scope.launch {
-                                buttonEnabled = false
-                                viewModel.refresh(true)
-                                delay(5000.milliseconds)
-                                buttonEnabled = true
-                            }
-                        }
-                    },
-                    position = TilePosition.ALONE
-                )
-            }
-
-            // --- SECTION AUTRES ---
-            SettingsSection(title = titleOther) {
-                val context = LocalContext.current
-                val email = stringResource(R.string.email)
-                val homepage = stringResource(R.string.app_homepage)
-                SettingsTile(
-                    title = stringResource(R.string.notifications),
-                    subtitle = stringResource(R.string.notifications_subtitle),
-                    icon = painterResource(R.drawable.notifications_24),
-                    modifier = Modifier,
-                    onClick = {
-                        openAppNotificationSettings(context)
-                    },
-                    position = TilePosition.START
-                )
-                SettingsTile(
-                    title = stringResource(R.string.github_repository),
-                    icon = painterResource(R.drawable.github_brands_solid_ful),
-                    onClick = {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            "https://github.com/ChorizoT/Lapeka".toUri()
-                        )
-                        context.startActivity(intent)
-                    }
-                )
-                SettingsTile(
-                    title = stringResource(R.string.github_changelog),
-                    icon = painterResource(R.drawable.newspaper_24),
-                    onClick = {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            "$homepage/changelog".toUri()
-                        )
-                        context.startActivity(intent)
-                    }
-                )
-                SettingsTile(
-                    title = stringResource(R.string.support),
-                    subtitle = email,
-                    icon = painterResource(R.drawable.support_agent_24),
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_SENDTO).apply {
-                            data = "mailto:$email".toUri()
-                            putExtra(Intent.EXTRA_SUBJECT, "Support Application - v1.0.8")
-                        }
-
-                        if (intent.resolveActivity(context.packageManager) != null) {
-                            context.startActivity(intent)
-                        } else {
-                            context.startActivity(
-                                Intent.createChooser(
-                                    intent,
-                                    "Envoyer un e-mail via..."
-                                )
-                            )
-                        }
-                    }
-                )
-                SettingsTile(
-                    title = stringResource(R.string.version_actuelle),
-                    subtitle = "${BuildConfig.VERSION_NAME}${if (BuildConfig.IS_FOSS) "-foss" else ""}",
-                    icon = painterResource(R.drawable.info_24),
-                    onClick = null,
-                    position = TilePosition.END
-                )
-            }
-
-            // --- FOOTER / A PROPOS ---
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(R.string.build_with_love_by_birdywood),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = stringResource(R.string.credit_app),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
+            )
         }
+    } else {
+         AlertDialog(
+             onDismissRequest = onDismiss,
+             modifier = Modifier.width(500.dp),   // largeur maximale fixe, centré
+             properties = DialogProperties(usePlatformDefaultWidth = false))
+         {
+             Surface(
+                 // widthIn fixe une largeur minimale et maximale idéale pour grand écran (ex: max 560dp)
+                 modifier = Modifier
+                     .padding(24.dp)
+                     .widthIn(min = 280.dp, max = 560.dp)
+                     .fillMaxWidth(),
+                 shape = MaterialTheme.shapes.extraLarge, // Arrondi MD3 standard pour les dialogues
+                 color = AlertDialogDefaults.containerColor,
+                 tonalElevation = AlertDialogDefaults.TonalElevation
+             ) {
+                 SettingsContent(
+                     viewModel,
+                     initialUrl,
+                     selectedDarkModeOption,
+                     AlertDialogDefaults.containerColor,
+                     onSave = { onSave(it) },
+                     onDismiss = onDismiss,
+                     onShowDarkModeDialog = {
+                         currentDarkMode = selectedDarkModeOption
+                         showDarkModeDialog = true
+                     }
+                 )
+             }
+
+         }
     }
 
     if (showDarkModeDialog) {
@@ -427,6 +228,278 @@ fun SettingsSheet(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun SettingsContent(
+    viewModel: ListViewModel,
+    initialUrl: String,
+    selectedDarkModeOption: String,
+    backgroundColor: Color,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onShowDarkModeDialog: () -> Unit
+) {
+    var url by remember { mutableStateOf(initialUrl) }
+    val ctx = LocalContext.current
+    val activity = LocalActivity.current
+    val scope = rememberCoroutineScope()
+
+
+    val titleDisplay = stringResource(R.string.settings_title_display)
+    val titleNetwork = stringResource(R.string.settings_title_network)
+    val titleUpdate = stringResource(R.string.settings_title_update)
+    val titleOther = stringResource(R.string.settings_title_other)
+    LazyColumn(
+        modifier = Modifier.padding(
+            start = 24.dp,
+            end = 24.dp,
+            bottom = 24.dp,
+            top = 0.dp
+        )
+    ) {
+        stickyHeader {
+            Row(
+                modifier = Modifier
+                    .background(backgroundColor)
+                    .fillMaxWidth()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {}
+                    .padding(start = 0.dp, end = 0.dp, bottom = 16.dp, top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.action_settings),
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                IconButton(
+                    {
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+
+                ) {
+                    Icon(
+                        painterResource(R.drawable.rounded_close_24),
+                        contentDescription = "Close"
+                    )
+                }
+            }
+        }
+
+        // --- SECTION RESEAU ---
+        SettingsSection(title = titleNetwork) {
+            SettingsTextFieldTile(
+                title = stringResource(R.string.text_manifest_endpoint),
+                value = url,
+                onValueSave = { newUrl ->
+                    url = newUrl; if (newUrl.isNotBlank()) onSave(newUrl)
+                },
+                label = stringResource(R.string.text_api_url),
+                icon = painterResource(R.drawable.cloud_24),
+                position = TilePosition.START
+            )
+            var show_featured_apps by remember {
+                mutableStateOf(
+                    AppPreferences.showFeaturedApps
+                )
+            }
+            if (!BuildConfig.IS_FOSS) {
+                SettingsSwitchTile(
+                    title = stringResource(R.string.featured_apps),
+                    subtitle = stringResource(R.string.featured_apps_subtitle),
+                    checked = show_featured_apps,
+                    onCheckedChange = {
+                        show_featured_apps = it
+                        scope.launch {
+                            AppPreferences.showFeaturedApps = it
+                            delay(200.milliseconds)
+                            onDismiss()
+                            activity?.finish()
+                        }
+                    },
+                    icon = painterResource(R.drawable.editor_choice_24),
+                    position = TilePosition.END
+                )
+            }
+        }
+
+//            item {
+//                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+//            }
+
+        // --- SECTION APPARENCE ---
+        SettingsSection(title = titleDisplay) {
+            var dynamicTheme by remember {
+                mutableStateOf(
+                    AppPreferences.dynamicTheme
+                )
+            }
+
+            var labs by remember {
+                mutableStateOf(
+                    AppPreferences.labs
+                )
+            }
+            SettingsSwitchTile(
+                title = stringResource(R.string.dynamic_theme),
+                subtitle = stringResource(R.string.dynamic_theme_subtitle),
+                checked = dynamicTheme,
+                onCheckedChange = {
+                    dynamicTheme = it
+                    scope.launch {
+                        AppPreferences.dynamicTheme = it
+                        delay(200.milliseconds)
+                        onDismiss()
+                        delay(100.milliseconds)
+                        activity?.recreate()
+                    }
+                },
+                icon = painterResource(R.drawable.palette_24),
+                position = TilePosition.START
+            )
+
+            SettingsTile(
+                title = stringResource(R.string.dark_mode),
+                subtitle = selectedDarkModeOption,
+                icon = painterResource(R.drawable.dark_mode_24),
+                onClick = onShowDarkModeDialog,
+                position = TilePosition.MIDDLE
+            )
+
+            SettingsSwitchTile(
+                title = stringResource(R.string.labs_title),
+                subtitle = stringResource(R.string.labs_subtitle),
+                checked = labs,
+                onCheckedChange = {
+                    labs = it
+                    scope.launch {
+                        AppPreferences.labs = it
+                        delay(200.milliseconds)
+                        onDismiss()
+                        delay(100.milliseconds)
+                        activity?.recreate()
+                    }
+                },
+                icon = painterResource(R.drawable.experiment_24),
+                position = TilePosition.END
+            )
+        }
+
+        // --- SECTION MISES À JOUR ---
+        SettingsSection(title = titleUpdate) {
+            var buttonEnabled = true
+            SettingsTile(
+                title = stringResource(R.string.rechercher_des_nouvelles_versions),
+                icon = painterResource(R.drawable.rounded_refresh_24),
+                onClick = {
+                    if (buttonEnabled) {
+                        scope.launch {
+                            buttonEnabled = false
+                            viewModel.refresh(true)
+                            delay(5000.milliseconds)
+                            buttonEnabled = true
+                        }
+                    }
+                },
+                position = TilePosition.ALONE
+            )
+        }
+
+        // --- SECTION AUTRES ---
+        SettingsSection(title = titleOther) {
+            val context = LocalContext.current
+            val email = stringResource(R.string.email)
+            val homepage = stringResource(R.string.app_homepage)
+            SettingsTile(
+                title = stringResource(R.string.notifications),
+                subtitle = stringResource(R.string.notifications_subtitle),
+                icon = painterResource(R.drawable.notifications_24),
+                modifier = Modifier,
+                onClick = {
+                    openAppNotificationSettings(context)
+                },
+                position = TilePosition.START
+            )
+            SettingsTile(
+                title = stringResource(R.string.github_repository),
+                icon = painterResource(R.drawable.github_brands_solid_ful),
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        "https://github.com/ChorizoT/Lapeka".toUri()
+                    )
+                    context.startActivity(intent)
+                }
+            )
+            SettingsTile(
+                title = stringResource(R.string.github_changelog),
+                icon = painterResource(R.drawable.newspaper_24),
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        "$homepage/changelog".toUri()
+                    )
+                    context.startActivity(intent)
+                }
+            )
+            SettingsTile(
+                title = stringResource(R.string.support),
+                subtitle = email,
+                icon = painterResource(R.drawable.support_agent_24),
+                onClick = {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = "mailto:$email".toUri()
+                        putExtra(Intent.EXTRA_SUBJECT, "Support Application - v1.0.8")
+                    }
+
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                    } else {
+                        context.startActivity(
+                            Intent.createChooser(
+                                intent,
+                                "Envoyer un e-mail via..."
+                            )
+                        )
+                    }
+                }
+            )
+            SettingsTile(
+                title = stringResource(R.string.version_actuelle),
+                subtitle = "${BuildConfig.VERSION_NAME}${if (BuildConfig.IS_FOSS) "-foss" else ""}",
+                icon = painterResource(R.drawable.info_24),
+                onClick = null,
+                position = TilePosition.END
+            )
+        }
+
+        // --- FOOTER / A PROPOS ---
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.build_with_love_by_birdywood),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = stringResource(R.string.credit_app),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
     }
 }
 

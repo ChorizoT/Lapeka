@@ -1,6 +1,8 @@
 package fr.birdywood.lapeka.data
 
+import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.Query
 import retrofit2.http.Url
 
 /**
@@ -11,6 +13,14 @@ import retrofit2.http.Url
  */
 interface AppsApiService {
 
+    // ---- Manifest (user-configurable URL) ----
     @GET
-    suspend fun getApps(@Url manifestUrl: String): List<RemoteAppInfo>
+    suspend fun getApps(
+        @Url manifestUrl: String,
+        @Query("force") force: Boolean? = null
+    ): Response<List<RemoteAppInfo>>
+
+    // ---- Featured apps (fixed BirdyWood URL, injected by NetworkModule) ----
+    @GET("project/projects.json")
+    suspend fun getFeaturedApps(): Response<List<FeaturedApp>>
 }

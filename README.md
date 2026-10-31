@@ -30,23 +30,24 @@
 
 There are 2 versions of the app:
 #### The FULL app (recommended)
+This version come with BirdyWood services (BirdyAuth), and a default manifest url.<br>
 You can download the app's APK on the homepage : [https://lapeka.labs.birdywood.fr](https://lapeka.labs.birdywood.fr)
 
 #### The FOSS version
+This version come without BirdyWood services, and you have to enter your own JSON manifest endpoint.<br>
 You can download the FOSS version in GitHub's Release : https://github.com/Chorizot/Lapeka/releases/latest
 
 ## Key Features
 
 - **BirdyAuth Integration**: Secure access to your private manifest via BirdyWood's authentication system.
 - **Modern UI**: Full Material Design 3 implementation with support for **Dynamic Theming** and **Dark Mode**.
-- **Silent Updates**: Uses the `PackageInstaller` session API for seamless updates without confirmation dialogs (Android 12+) (BROKEN).
 - **Live Progress Notifications**: Track your app installations with a real-time progress bar in the system tray.
 - **Onboarding Flow**: Smooth welcome experience for new users with automated permission handling.
 - **Search & Filter**: Quickly find and manage your tracked applications.
 - **Pull-to-Refresh**: Easily update your app list with a simple swipe.
 - **Background Updates**: Automated version checking via WorkManager.
 
-## How it works
+## How it works (for the FULL version)
 
 1. **Authentication**: Sign in with your BirdyAuth account to access BirdyWood's app list (by default).
 2. **Manifest Tracking**: The app polls your configured JSON manifest endpoint and compares `versionCode` against installed packages.

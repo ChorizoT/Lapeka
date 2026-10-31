@@ -2,227 +2,278 @@ package fr.birdywood.lapeka.birdyauth
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
-import android.util.Log
+import android.util.Base64
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import androidx.browser.customtabs.CustomTabsIntent
-import com.squareup.moshi.JsonClass
-import com.squareup.moshi.Moshi
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
-import androidx.core.net.toUri
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import kotlin.jvm.java
-import androidx.core.content.edit
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
+import okhttp3.OkHttpClient
+import okhttp3.Response
+import okhttp3.ResponseBody
+import retrofit2.HttpException
+import retrofit2.Retrofit
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+import java.security.MessageDigest
+import java.security.KeyStore
+import java.security.SecureRandom
+import java.util.concurrent.Executors
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+import androidx.core.net.toUri
+import kotlin.time.Instant
 
+/**
+ * Single entry point for BirdyAuth on Android.
+ *
+ *   val auth = BirdyAuth(context, serviceId = "6a5a...")
+ *
+ * PKCE login flow:
+ *   auth.login()                   -> custom tab opens ?redirect=...&code=<SHA-256(verifier)>
+ *   deeplink lapeka://auth?code=.. -> auth.handleDeepLink(uri)  (sends authCode + verifier, gets the token)
+ */
+class BirdyAuth(
+    context: Context,
+    private val serviceId: String,
+    private val deepLinkScheme: String,
+    private val deepLinkHost: String,
+    private val host: String = "https://auth.birdywood.fr",
+) {
+    private val appContext = context.applicationContext
+    private val store = SecureStore(appContext)
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
-class BirdyAuth (val ctx: Context) {
-    companion object {
-        const val TAG = "BirdyAuth"
-        const val HOST: String = "https://auth.birdywood.fr"
-        const val COOKIE_NAME = "BA_token"
-        const val SERVICE_ID = "6a5a6f630b4cf396cb99dc93"
+    // ---------- Public state ----------
+
+    private val _account = MutableStateFlow(store.account(json))
+    /** Cached account (null = logged out). Call [refresh] to validate it with the server. */
+    val account: StateFlow<Account?> = _account.asStateFlow()
+
+    val isLoggedIn: Boolean get() = store.token != null
+    val token: String? get() = store.token
+
+    /** Receives auth events (called on the thread that called the suspend function / clearSession). */
+    var listener: BirdyAuthListener? = null
+
+    // ---------- Networking ----------
+
+    /** OkHttp client with [BaTokenInterceptor]. Reuse it for your own APIs. */
+    val httpClient: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(BaTokenInterceptor(getToken = { store.token }, setToken = { store.token = it }))
+        .build()
+
+    /** Retrofit with auth + kotlinx.serialization: auth.retrofit(url).create(Api::class.java) */
+    fun retrofit(baseUrl: String): Retrofit = Retrofit.Builder()
+        .baseUrl(baseUrl.trimEnd('/') + "/")
+        .client(httpClient)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+
+    private val api: AuthApi = retrofit(host).create(AuthApi::class.java)
+
+    // ---------- Actions: custom tabs ----------
+
+    /** Starts the login flow (PKCE). */
+    fun login() = openTab(authUrl(LOGIN_PATH, newChallenge()))
+
+    /** Opens the account creation page. After sign-up the flow behaves like a login. */
+    fun openSignUp() = openTab(authUrl(SIGNUP_PATH, newChallenge()))
+
+    /** Opens the account settings page. */
+    fun openAccountSettings() = openTab(host.toUri())
+
+    /** Clears the local session and opens the disconnect page to kill the server session. */
+    fun logout() {
+        clearSession()
+        openTab(authUrl(DISCONNECT_PATH, challenge = null))
     }
-    var client: OkHttpClient = OkHttpClient()
-    val moshi = Moshi.Builder().build()
-    private val accountJsonAdapter = moshi.adapter(Account::class.java)
-    private val preferenceSystem = PreferenceSystem(ctx)
 
-    // STATE
-    var token: String?
-        get() {
-            val value = preferenceSystem.get<String>("token", "")
-            return if (value == "") null else value
-        }
-        set(value) {
-            if (value == null) {
-                preferenceSystem.set("token", "")
-            }else{
-                preferenceSystem.set("token", value)
-            }
-        }
+    /** Clears the local session only (no browser). */
+    fun clearSession() {
+        val wasLoggedIn = isLoggedIn
+        store.clear()
+        _account.value = null
+        if (wasLoggedIn) listener?.onLoggedOut()
+    }
 
-    var account: Account?
-        get(){
-            val json = preferenceSystem.get<String>("account", "")
-            if (json.isNullOrBlank()) return null
-            return try {
-                accountJsonAdapter.fromJson(json)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to parse account JSON", e)
-                null
-            }
-        }
-        set(value){
-            if (value == null) {
-                preferenceSystem.set("account", "")
-            } else {
-                preferenceSystem.set("account", accountJsonAdapter.toJson(value))
-            }
-        }
+    // ---------- Deeplink ----------
 
-    suspend fun check(logged:()->Unit= {}, loggingFailed:(reason: String)->Unit = {}) = withContext(Dispatchers.IO) {
-        val currentToken = token
-        if (currentToken.isNullOrEmpty()) {
-            Log.d(TAG, "No token found, redirecting to login")
-            loggingFailed("No token found")
-            return@withContext
-        }
+    fun isAuthDeepLink(uri: Uri): Boolean =
+        uri.scheme == deepLinkScheme && uri.host == deepLinkHost
 
-        val url = "$HOST/api/user"
+    /**
+     * Call from your Activity (onCreate / onNewIntent) with intent.data.
+     * Exchanges the authorization code + the PKCE verifier for the real token.
+     */
+    suspend fun handleDeepLink(uri: Uri): Result<Account> = runCatching {
+        require(isAuthDeepLink(uri)) { "Not a BirdyAuth deeplink" }
+        val authCode = uri.getQueryParameter("code") ?: error("Missing authorization code")
+        val verifier = store.pendingVerifier ?: error("No login in progress")
+        store.pendingVerifier = null
 
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("Cookie", "$COOKIE_NAME=$currentToken")
-            .build()
-
+        val response = api.exchange(ExchangeRequest(codeVerifier = verifier, authorizationCode = authCode))
+        store.token = response.token
         try {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.d(TAG, "Check failed with code ${response.code}, redirecting to login")
-                    loggingFailed("Check failed with code ${response.code}")
-                    return@withContext
-                }
-
-                val bodyString = response.body.string()
-                Log.d(TAG, bodyString)
-                var result = true
-                if (SERVICE_ID != "") result = verifAuthorization()
-                if (result){
-                    account = accountJsonAdapter.fromJson(bodyString)
-
-                    Log.d(TAG, account.toString())
-                    logged()
-                }else{
-                    Log.d(TAG, "Not Authorized")
-                    loggingFailed("Not Authorized")
-                    return@withContext
-                }
-
-            }
+            loadAccount()
         } catch (e: Exception) {
-            Log.e(TAG, "Network error during check", e)
-            loggingFailed(e.message ?: "Network error")
+            store.token = null // new token rejected (e.g. not authorized): don't keep it
+            throw e
+        }
+    }.onSuccess {
+        listener?.onLoggedIn(it)
+    }.onFailure {
+        reportFailure(it)
+    }
+
+    // ---------- Session validation ----------
+
+    /**
+     * Re-fetches the account and checks the service authorization.
+     * Logs out locally only when the server rejects us (401 / not authorized),
+     * not on network errors.
+     */
+    suspend fun refresh(): Result<Account> {
+        if (!isLoggedIn) return Result.failure(IllegalStateException("Not logged in"))
+        return runCatching { loadAccount() }.onFailure {
+            if (it is NotAuthorizedException || (it is HttpException && it.code() == 401)) clearSession()
+            reportFailure(it)
         }
     }
 
-    suspend fun verifAuthorization(): Boolean = withContext(Dispatchers.IO) {
-        val currentToken = token ?: return@withContext false
-        val url = "$HOST/api/isAuthorized/$SERVICE_ID"
+    private fun reportFailure(e: Throwable) {
+        if (e is NotAuthorizedException) listener?.onNotAuthorized() else listener?.onError(e)
+    }
 
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("Cookie", "$COOKIE_NAME=$currentToken")
+    private suspend fun loadAccount(): Account {
+        val authorized = api.isAuthorized(serviceId).use { it.string().contains("true") }
+        if (!authorized) throw NotAuthorizedException()
+        val account = api.getUser()
+        store.saveAccount(json, account)
+        _account.value = account
+        return account
+    }
+
+    // ---------- Helpers ----------
+
+    /** Generates and stores a verifier, returns its S256 challenge to put in the URL. */
+    private fun newChallenge(): String {
+        val verifier = base64Url(ByteArray(32).also { SecureRandom().nextBytes(it) })
+        store.pendingVerifier = verifier
+        return base64Url(MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII)))
+    }
+
+    private fun base64Url(bytes: ByteArray): String =
+        Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+
+    private fun authUrl(path: String, challenge: String?): Uri =
+        Uri.parse(host).buildUpon()
+            .path(path)
+            .appendQueryParameter("redirect", "$deepLinkScheme://$deepLinkHost")
+            .apply { if (challenge != null) appendQueryParameter("code", challenge) }
             .build()
 
-        return@withContext try {
-            client.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    val body = response.body.string()
-                    // Assuming the API returns a boolean or a JSON with "authorized": true
-                    body.contains("true")
-                } else {
-                    false
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Authorization check failed", e)
-            false
-        }
+    private fun openTab(uri: Uri) {
+        val tab = CustomTabsIntent.Builder().build()
+        tab.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        tab.launchUrl(appContext, uri)
     }
 
-    fun redirectToLogin() {
-        val deeplink = "lapeka://auth"
-        val encodedDeeplink = Uri.encode(deeplink)
-        val loginUrl = "$HOST/?redirect=$encodedDeeplink"
-
-        val intent = CustomTabsIntent.Builder().build()
-        intent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent.launchUrl(ctx, loginUrl.toUri())
-    }
-
-    fun redirectToDisconnectAndLogin(){
-        val deeplink = "lapeka://auth"
-        val encodedDeeplink = Uri.encode(deeplink)
-        val loginUrl = "$HOST/disconnect?redirect=$encodedDeeplink"
-
-        val intent = CustomTabsIntent.Builder().build()
-        intent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent.launchUrl(ctx, loginUrl.toUri())
-    }
-
-    fun editAccount(){
-        val url = HOST
-
-        val intent = CustomTabsIntent.Builder().build()
-        intent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent.launchUrl(ctx, url.toUri())
-    }
-
-    suspend inline fun <reified T : Any> request(
-        method: String,
-        url: String,
-        body: String = "",
-        credentials: Boolean = true
-    ): Result<T?> = withContext(Dispatchers.IO) {
-
-        runCatching {
-            val validUrl = ensureValidUrl(url)
-            Log.d(TAG, "$method $validUrl")
-            val requestBody = if (method == "GET" || method == "HEAD") null else body.toRequestBody("application/json".toMediaType())
-            val requestBuilder = Request.Builder()
-                .url(validUrl)
-                .method(method, requestBody)
-                .addHeader("Accept", "application/json")
-                .addHeader("User-Agent", "Lapeka Agent")
-
-            if (credentials) {
-                token?.let {
-                    requestBuilder.addHeader("Cookie", "$COOKIE_NAME=$it")
-                }
-            }
-
-            val type = object : TypeToken<T>() {}.type
-
-            this@BirdyAuth.client.newCall(requestBuilder.build()).execute().use { response ->
-                val responseBody = response.body.string()
-                if (!response.isSuccessful) {
-                    Log.e(TAG, "HTTP ${response.code} | $responseBody")
-                    throw IOException("HTTP ${response.code}")
-                }
-
-                Log.d(TAG, "Result: $responseBody")
-                moshi.adapter<T>(type).fromJson(responseBody)
-            }
-        }.onFailure {
-            Log.e(TAG, "Request failed: ${it.message}", it)
-        }
+    companion object {
+        const val COOKIE_NAME = "BA_token"
+        // Adjust to your server routes
+        private const val LOGIN_PATH = "/"
+        private const val SIGNUP_PATH = "/register"
+        private const val DISCONNECT_PATH = "/disconnect"
     }
 }
 
-fun ensureValidUrl(url: String): String {
-    val trimmed = url.trim()
-    if (trimmed.isEmpty()) return trimmed
-    return if (!trimmed.startsWith("http://", ignoreCase = true) &&
-        !trimmed.startsWith("https://", ignoreCase = true)
-    ) {
-        "https://$trimmed"
-    } else {
-        trimmed
+class NotAuthorizedException : Exception("Account is not authorized for this service")
+
+/** Override only what you need. */
+interface BirdyAuthListener {
+    /** Login completed (deeplink exchanged, account loaded and authorized). */
+    fun onLoggedIn(account: Account) {}
+    /** Local session cleared (logout, 401 or not authorized during refresh). */
+    fun onLoggedOut() {}
+    /** The account is valid but has no access to this service. */
+    fun onNotAuthorized() {}
+    /** Any other failure (network, missing code, server error...). */
+    fun onError(error: Throwable) {}
+}
+
+// ---------- Interceptor ----------
+
+/** Sends the BA_token cookie and keeps the token up to date from Set-Cookie headers. */
+class BaTokenInterceptor(
+    private val getToken: () -> String?,
+    private val setToken: (String) -> Unit,
+) : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request().newBuilder().apply {
+            getToken()?.let { addHeader("Cookie", "${BirdyAuth.COOKIE_NAME}=$it") }
+        }.build()
+
+        val response = chain.proceed(request)
+
+        response.headers("Set-Cookie").forEach { setCookie ->
+            if (setCookie.startsWith("${BirdyAuth.COOKIE_NAME}=")) {
+                val value = setCookie.substringAfter("=").substringBefore(";")
+                if (value.isNotBlank()) setToken(value)
+            }
+        }
+        return response
     }
 }
 
-@JsonClass(generateAdapter = true)
+// ---------- Retrofit API ----------
+
+private interface AuthApi {
+    @POST("api/token")
+    suspend fun exchange(@Body body: ExchangeRequest): TokenResponse
+
+    @GET("api/user")
+    suspend fun getUser(): Account
+
+    @GET("api/isAuthorized/{serviceId}")
+    suspend fun isAuthorized(@Path("serviceId") serviceId: String): ResponseBody
+}
+
+@Serializable
+data class ExchangeRequest(val codeVerifier: String, val authorizationCode: String)
+
+@Serializable
+data class TokenResponse(val token: String)
+
+// ---------- Models ----------
+
+@Serializable
 data class Account(
-    val _id:String,
+    val _id: String,
     val username: String,
     val firstname: String,
     val lastname: String,
@@ -230,72 +281,129 @@ data class Account(
     val img: String,
     val authorizations: List<Authorization>,
     val birthdate: Long,
-    val creationDate: String,
-    val lastUpdated: String
+    val creationDate: Instant,
+    val lastUpdated: Instant,
 )
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class Authorization(
-    val _id_service : String,
+    val _id_service: String,
     val displayName: String,
     val icon: String,
     val url: String,
-    val enabled: Boolean
+    val enabled: Boolean,
 )
 
+// ---------- Encrypted storage (DataStore + Android Keystore AES-GCM) ----------
 
-private class PreferenceSystem (val ctx: Context, val name: String = "birdyauth_settings") {
-    private val preferences: SharedPreferences =
-        ctx.getSharedPreferences(name, Context.MODE_PRIVATE)
+private val Context.birdyAuthDataStore by preferencesDataStore(
+    name = "birdyauth_secure",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
 
-    fun <T> set(key: String, value: T) {
-        preferences.edit {
-            when (value) {
-                is String -> putString(key, value as String)
-                is Int -> putInt(key, value as Int)
-                is Boolean -> putBoolean(key, value as Boolean)
-                is Float -> putFloat(key, value as Float)
-                is Long -> putLong(key, value as Long)
-                else -> throw UnsupportedOperationException("Not yet implemented")
+/**
+ * DataStore holds the values, each one encrypted with an AES-256-GCM key kept in the Android Keystore.
+ * Values are cached in memory (loaded once at creation): reads are instant and the OkHttp interceptor
+ * never touches the disk. Writes are persisted in the background, in order.
+ */
+private class SecureStore(context: Context) {
+    private val dataStore = context.applicationContext.birdyAuthDataStore
+    private val scope = CoroutineScope(
+        SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    )
+
+    @Volatile private var tokenCache: String? = null
+    @Volatile private var verifierCache: String? = null
+    @Volatile private var accountCache: String? = null
+
+    init {
+        // One-time blocking read (a few ms) so isLoggedIn / account are correct from the first frame.
+        // A value that can't be decrypted (lost Keystore key) is simply ignored = logged out.
+        runBlocking(Dispatchers.IO) {
+            val prefs = runCatching { dataStore.data.first() }.getOrNull()
+            tokenCache = prefs?.get(KEY_TOKEN)?.let(Crypto::decrypt)
+            verifierCache = prefs?.get(KEY_VERIFIER)?.let(Crypto::decrypt)
+            accountCache = prefs?.get(KEY_ACCOUNT)?.let(Crypto::decrypt)
+        }
+    }
+
+    var token: String?
+        get() = tokenCache
+        set(value) { tokenCache = value; persist(KEY_TOKEN, value) }
+
+    /** PKCE verifier of the login in progress (survives process death while the tab is open). */
+    var pendingVerifier: String?
+        get() = verifierCache
+        set(value) { verifierCache = value; persist(KEY_VERIFIER, value) }
+
+    fun account(json: Json): Account? =
+        (accountCache?.let { runCatching { json.decodeFromString(Account.serializer(), it) }.getOrNull() })//?: Account("", "", "", "", "", "", emptyList(), 0, "", "")
+
+    fun saveAccount(json: Json, account: Account) {
+        val raw = json.encodeToString(Account.serializer(), account)
+        accountCache = raw
+        persist(KEY_ACCOUNT, raw)
+    }
+
+    fun clear() {
+        tokenCache = null
+        verifierCache = null
+        accountCache = null
+        scope.launch { runCatching { dataStore.edit { it.clear() } } }
+    }
+
+    private fun persist(key: Preferences.Key<String>, value: String?) {
+        scope.launch {
+            runCatching {
+                dataStore.edit { prefs ->
+                    if (value == null) prefs.remove(key) else prefs[key] = Crypto.encrypt(value)
+                }
             }
         }
     }
-    fun <T> get(key: String, defaultValue: T): T {
-        return when (defaultValue) {
-            is String -> preferences.getString(key, defaultValue)
-            is Int -> preferences.getInt(key, defaultValue)
-            is Boolean -> preferences.getBoolean(key, defaultValue)
-            is Float -> preferences.getFloat(key, defaultValue)
-            is Long -> preferences.getLong(key, defaultValue)
-            else -> throw UnsupportedOperationException("Not yet implemented: " + (defaultValue?.let { it::class.simpleName } ?: "null"))
-        } as T
-    }
 
-    fun remove(key: String) {
-        val editor: SharedPreferences.Editor = preferences.edit()
-        editor.remove(key)
-        editor.apply()
-    }
-    fun clear() {
-        val editor: SharedPreferences.Editor = preferences.edit()
-        editor.clear()
-        editor.apply()
-    }
-    fun contains(key: String): Boolean {
-        return preferences.contains(key)
-    }
-    fun keys(): Set<String> {
-        return preferences.all.keys
+    private companion object {
+        val KEY_TOKEN = stringPreferencesKey("token")
+        val KEY_ACCOUNT = stringPreferencesKey("account")
+        val KEY_VERIFIER = stringPreferencesKey("pending_verifier")
     }
 }
 
-/**
- * Helper class to capture generic type information at runtime for Moshi.
- * This is necessary because Moshi's [Moshi.adapter] method with a [Class] argument
- * suffers from type erasure (e.g., List<RemoteAppInfo> becomes just List).
- */
-@PublishedApi
-internal abstract class TypeToken<T> {
-    val type: Type
-        get() = (javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[0]
+private object Crypto {
+    private const val ALIAS = "birdyauth_key"
+    private const val TRANSFORMATION = "AES/GCM/NoPadding"
+    private const val IV_SIZE = 12
+
+    private fun key(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (keyStore.getKey(ALIAS, null) as? SecretKey)?.let { return it }
+        return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
+            init(
+                KeyGenParameterSpec.Builder(
+                    ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setKeySize(256)
+                    .build()
+            )
+            generateKey()
+        }
+    }
+
+    /** Returns base64(iv + ciphertext). The Keystore generates a fresh random IV on every call. */
+    fun encrypt(plain: String): String {
+        val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, key()) }
+        val bytes = cipher.iv + cipher.doFinal(plain.toByteArray(Charsets.UTF_8))
+        return Base64.encodeToString(bytes, Base64.NO_WRAP)
+    }
+
+    /** Returns null if the value can't be decrypted (corrupted data or lost key). */
+    fun decrypt(encoded: String): String? = runCatching {
+        val bytes = Base64.decode(encoded, Base64.NO_WRAP)
+        val cipher = Cipher.getInstance(TRANSFORMATION).apply {
+            init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, bytes, 0, IV_SIZE))
+        }
+        String(cipher.doFinal(bytes, IV_SIZE, bytes.size - IV_SIZE), Charsets.UTF_8)
+    }.getOrNull()
 }

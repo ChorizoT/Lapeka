@@ -16,47 +16,27 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.plus
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.*
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
@@ -65,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +57,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -96,11 +80,13 @@ import fr.birdywood.lapeka.data.AppStatus
 import fr.birdywood.lapeka.data.FeaturedApp
 import fr.birdywood.lapeka.data.TrackedApp
 import fr.birdywood.lapeka.utils.AppPreferences
+import fr.birdywood.lapeka.utils.FilterSelect
+import fr.birdywood.lapeka.utils.filterApps
 import java.text.DateFormat.getDateInstance
 import java.util.Date
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ListScreen(viewModel: ListViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
@@ -110,115 +96,147 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
     var hideKeyboard by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
-    val state = rememberLazyListState()
+    val state = rememberLazyStaggeredGridState()
 
     val labs by remember { mutableStateOf(AppPreferences.labs) }
 
 
     Column {
-
-        LazyColumn(
-            state = state,
-            modifier = Modifier.fillMaxHeight(),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-
-            item {
-                Spacer(Modifier.height(12.dp))
-            }
-            if (!labs) {
-                stickyHeader {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(CircleShape)
-                            .clickable { hideKeyboard = true }
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape
-                            )
+        val scrollState = rememberScrollState()
+        if (labs) {
+            FlowRow(
+                Modifier
+                    .padding(horizontal = 0.dp)
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState)
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Spacer(modifier = Modifier.width(14.dp))
+                FilterSelect.entries.forEachIndexed { index, filter ->
+                    ToggleButton(
+                        checked = uiState.filter == filter,
+                        onCheckedChange = { viewModel.setFilter(filter) },
+                        shapes =
+                            when (index) {
+                                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                FilterSelect.entries.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                            },
+                        modifier = Modifier.semantics { role = Role.RadioButton },
                     ) {
-
-
-                        TextField(
-                            modifier = Modifier
-                                .fillMaxWidth(), value = search,
-                            onValueChange = { viewModel.setSearchQuery(it) },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = {
-                                focusManager.clearFocus()
-                            }),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                cursorColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            leadingIcon = {
-                                Icon(
-                                    painterResource(R.drawable.rounded_search_24),
-                                    contentDescription = "search icon"
-                                )
-                            },
-                            trailingIcon = {
-                                if (search != "") {
-                                    IconButton(
-                                        onClick = { viewModel.setSearchQuery(""); focusManager.clearFocus() }
-                                    ) {
-                                        Icon(
-                                            painterResource(R.drawable.rounded_close_24),
-                                            contentDescription = "close icon"
-                                        )
-                                    }
-                                }
-                            },
-                            placeholder = { Text(text = stringResource(R.string.action_search)) }
-                        )
-                        if (hideKeyboard) {
-                            focusManager.clearFocus()
-                            // Call onFocusClear to reset hideKeyboard state to false
-                            hideKeyboard = false
+                        if (uiState.filter == filter) {
+                            Icon(
+                                painterResource(R.drawable.rounded_check_24),
+                                contentDescription = "Done icon",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                            Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
                         }
+                        Text(stringResource(filter.idString))
                     }
-                    Spacer(Modifier.height(16.dp))
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+            }
+        }
+
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
+            state = state,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalItemSpacing = 14.dp,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (!labs) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(Modifier.height(12.dp))
                 }
             }
+
             if (uiState.isLoadingApps) {
-                item {
+                item(span = StaggeredGridItemSpan.FullLine) {
                     Box(
-                        Modifier.fillMaxSize(),
+                        Modifier.fillMaxSize().padding(vertical = 50.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         ContainedLoadingIndicator()
                     }
                 }
             } else {
-                items(
-                    uiState.apps
-                        .filter {
-                            it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(search)
+                val itemsFiltered = uiState.apps
+                    .filterApps(uiState.filter)
+                    .filter {
+                        it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(
+                            search
+                        )
+                    }
+                if (itemsFiltered.isEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            border = if (uiState.showFeaturedApps) {
+                                BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                )
+                            } else {
+                                null
+                            },
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                        ) {
+                            Column(
+                                Modifier
+                                    .padding(16.dp)
+                                    .padding(vertical = 100.dp).fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        painterResource(R.drawable.planet_24),
+                                        modifier = Modifier.size(72.dp),
+                                        tint = MaterialTheme.colorScheme.tertiary,
+                                        contentDescription = null
+                                    )
+
+                                    Spacer(modifier = Modifier.height(32.dp))
+
+                                    Text(
+                                        stringResource(R.string.text_no_matching_app),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(onClick = { viewModel.toggleSettings(true) }) {
+                                        Text(
+                                            stringResource(R.string.action_configure)
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        .sortedByDescending { it.status == AppStatus.UPDATE_AVAILABLE },
-                    key = { it.remote.id }
-                ) { app ->
-                    AppCard(
-                        app = app,
-                        onAction = { viewModel.installOrUpdate(app) })
+                    }
+                } else {
+                    items(
+                        itemsFiltered,
+                        key = { it.remote.id }
+                    ) { app ->
+                        AppCard(
+                            app = app,
+                            onAction = { viewModel.addToQueue(app) },
+                            onCancel = { viewModel.removeToQueue(app) })
+                    }
                 }
+
             }
-            item {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 AnimatedVisibility(
-                    search == "" && uiState.showFeaturedApps && !uiState.isLoadingFeaturedApps,
+                    search == "" && uiState.filter == FilterSelect.DEFAULT && uiState.showFeaturedApps && !uiState.isLoadingFeaturedApps && uiState.featuredApps.isNotEmpty(),
                     enter = slideInVertically(initialOffsetY = { -it }) + expandVertically(),
                     exit = slideOutVertically(targetOffsetY = { -it }) + shrinkVertically()
                 ) {
@@ -253,7 +271,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                     }
                 }
             }
-            item {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 Spacer(
                     Modifier.padding(
                         WindowInsets.navigationBars.asPaddingValues()
@@ -309,7 +327,12 @@ fun OfflineState(onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(painterResource(R.drawable.globe_2_cancel_24),modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.error, contentDescription = null)
+        Icon(
+            painterResource(R.drawable.globe_2_cancel_24),
+            modifier = Modifier.size(72.dp),
+            tint = MaterialTheme.colorScheme.error,
+            contentDescription = null
+        )
         Spacer(modifier = Modifier.height(32.dp))
         Text(
             stringResource(R.string.text_offline),
@@ -328,9 +351,10 @@ fun OfflineState(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val appCond = app.status == AppStatus.DOWNLOADING || app.status == AppStatus.INSTALLING
+private fun AppCard(app: TrackedApp, onAction: () -> Unit, onCancel: () -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val appCond =
+        app.status is AppStatus.Downloading || app.status is AppStatus.Installing || app.status is AppStatus.Queued
     val sizeIcon by animateIntAsState(
         targetValue = if (appCond) 28 else 52,
         animationSpec = tween(durationMillis = 300),
@@ -363,12 +387,33 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
                             .clip(clip)
                     )
 
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = appCond,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        CircularWavyProgressIndicator()
+                    if (app.status is AppStatus.Downloading) {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = appCond,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            CircularWavyProgressIndicator({ app.status.progress })
+                        }
+                    } else if (app.status is AppStatus.Queued) {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = appCond,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        }
+                    } else {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = appCond,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            CircularWavyProgressIndicator()
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.width(14.dp))
@@ -386,7 +431,7 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit) {
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                StatusAction(app = app, onAction = onAction)
+                StatusAction(app = app, onInstall = onAction, onCancel = onCancel)
             }
             Spacer(Modifier.height(2.dp))
             Text(
@@ -466,18 +511,18 @@ private fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-private fun StatusAction(app: TrackedApp, onAction: () -> Unit) {
+private fun StatusAction(app: TrackedApp, onInstall: () -> Unit, onCancel: () -> Unit) {
     when (app.status) {
-        AppStatus.NOT_INSTALLED -> Button(onClick = onAction) { Text(stringResource(R.string.action_install)) }
-        AppStatus.UPDATE_AVAILABLE -> Button(
-            onClick = onAction,
+        is AppStatus.NotInstalled -> Button(onClick = onInstall) { Text(stringResource(R.string.action_install)) }
+        is AppStatus.UpdateAvailable -> Button(
+            onClick = onInstall,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer
             )
         ) { Text(stringResource(R.string.action_update)) }
 
-        AppStatus.UP_TO_DATE -> {
+        is AppStatus.UpToDate -> {
             val context = LocalContext.current
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (app.remote.id != "lapeka") {
@@ -504,22 +549,33 @@ private fun StatusAction(app: TrackedApp, onAction: () -> Unit) {
             }
         }
 
-        AppStatus.DOWNLOADING -> Text(
+        is AppStatus.Downloading -> Text(
             stringResource(R.string.state_downloading),
             style = MaterialTheme.typography.labelMedium
         )
 
-        AppStatus.INSTALLING -> Text(
+        is AppStatus.Installing -> Text(
             stringResource(R.string.state_installing),
             style = MaterialTheme.typography.labelMedium
         )
 
-        AppStatus.ERROR -> Button(
-            onClick = onAction, colors = ButtonDefaults.buttonColors(
+        is AppStatus.Failed, is AppStatus.Cancelled -> Button(
+            onClick = onInstall, colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer
             )
         ) { Text(stringResource(R.string.action_retry)) }
+
+        is AppStatus.Queued -> OutlinedButton(onClick = onCancel) {
+            Text("Annuler")
+        }
+
+        is AppStatus.Success ->
+            AssistChip(
+                onClick = {},
+                enabled = false,
+                label = { Text(stringResource(R.string.state_up_to_date)) }
+            )
     }
 }
 

@@ -47,7 +47,7 @@ class UpdateCheckWorker(
 
         return try {
             val apps = repository.fetchTrackedApps()
-            val updatable = apps.filter { it.status == AppStatus.UPDATE_AVAILABLE }
+            val updatable = apps.filter { it.status == AppStatus.UpdateAvailable }
 
             createNotificationChannel(context)
             for (app in updatable) {
@@ -131,7 +131,7 @@ class UpdateCheckWorker(
         try {
             val loader = ImageLoader(context)
             val request = ImageRequest.Builder(context)
-                .data(fr.birdywood.lapeka.birdyauth.ensureValidUrl(url))
+                .data(url)
                 .allowHardware(false) // Requis pour eviter les erreurs d'affichage dans la notification
                 .build()
 

@@ -11,13 +11,25 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import fr.birdywood.lapeka.birdyauth.BirdyAuth
 import fr.birdywood.lapeka.worker.UpdateCheckWorker
 import java.util.concurrent.TimeUnit
 
 class LapekaApp : Application(), ImageLoaderFactory {
+    companion object {
+        lateinit var auth: BirdyAuth
+            private set
+    }
+
 
     override fun onCreate() {
         super.onCreate()
+        auth = BirdyAuth(
+            context = this,
+            serviceId = "6a5a6f630b4cf396cb99dc93",
+            deepLinkScheme = "lapeka",
+            deepLinkHost = "auth",
+        )
         scheduleUpdateChecks()
     }
 

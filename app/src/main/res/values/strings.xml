@@ -28,9 +28,9 @@
     <string name="state_up_to_date">Up to date</string>
     <string name="text_api_url">API URL</string>
     <string name="text_manifest_endpoint">Manifest endpoint</string>
-    <string name="text_connect_to_birdyauth">Connect to BirdyAuth</string>
-    <string name="text_log_in_to_manage_your_account_and_access_more_features">Log in to manage your account and access more features.</string>
-    <string name="action_login_with_birdyauth">Login with BirdyAuth</string>
+    <string name="text_connect_to_birdyauth">Your account BirdyAuth</string>
+    <string name="text_log_in_to_manage_your_account_and_access_more_features">Log in to manage your account and access this app.</string>
+    <string name="action_login_with_birdyauth">Login</string>
     <string name="version">Version</string>
     <string name="error_title">Oops, something went wrong!</string>
     <string name="error_message">It looks like you don’t have permission to access this app, or a technical issue occurred on our end.</string>
@@ -59,7 +59,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_title">Welcome to Lapeka</string>
-    <string name="welcome_desc">Your personal app manager. Track, download, and update your favorite apps easily.</string>
+    <string name="welcome_desc">Your personal app manager : track, download, and update your favorite apps easily.</string>
     <string name="action_get_started">Get Started</string>
     <string name="permission_notification_title">Stay Updated</string>
     <string name="permission_notification_desc">Lapeka needs notification permission to show you the progress of your installations.</string>
@@ -96,8 +96,14 @@
     <string name="text_offline">You\'re offline</string>
     <string name="subtitle_offline">To view apps and install/update them, please connect to the internet.</string>
     <string name="account_birthday_today">Don\'t forget your birthday!</string>
+    <string name="filter_default">All</string>
+    <string name="filter_installed">Installed</string>
+    <string name="filter_update">Updates available</string>
+    <string name="filter_not_installed">Not installed</string>
+    <string name="text_no_matching_app">Houston, we have a problem... No matching apps found.</string>
     <plurals name="account_birthday_not_today">
         <item quantity="one">Don\'t forget your birthday in %1$d day.</item>
         <item quantity="other">Don\'t forget your birthday in %1$d days.</item>
     </plurals>
+    <string name="action_share_shortcut">Share</string>
 </resources>

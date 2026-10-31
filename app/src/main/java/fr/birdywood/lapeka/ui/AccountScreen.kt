@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -23,51 +24,42 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import fr.birdywood.lapeka.LapekaApp.Companion.auth
 import fr.birdywood.lapeka.birdyauth.Account
 import fr.birdywood.lapeka.R
 import fr.birdywood.lapeka.ui.theme.LapekaTheme
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Composable
 fun AccountScreen(
-    viewModel: AccountViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val account by auth.account.collectAsState()
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        if (uiState.isLoading) {
-            CircularProgressIndicator()
+
+        if (account != null) {
+            LoggedInView(
+                account = account!!,
+                onLogout = { auth.logout() },
+                onRefresh = { scope.launch { auth.refresh() } },
+                onEdit = { auth.openAccountSettings() }
+            )
         } else {
-            val account = uiState.account
-            if (account != null) {
-                LoggedInView(
-                    account = account,
-                    onLogout = { viewModel.logout() },
-                    onRefresh = {viewModel.checkAuth()},
-                    onEdit = { viewModel.edit() }
-                )
-            } else {
-                NotLoggedInView(onLogin = { viewModel.login() })
-            }
+            NotLoggedInView(onLogin = { auth.login() })
         }
 
-        uiState.errorMessage?.let { error ->
-            Snackbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-            ) {
-                Text(text = error)
-            }
-        }
     }
 }
 
@@ -94,7 +86,8 @@ fun LoggedInView(
                 set(Calendar.MILLISECOND, 0)
             }
 
-            val birthCalendar = Calendar.getInstance().apply { timeInMillis = account.birthdate * 1000 }
+            val birthCalendar =
+                Calendar.getInstance().apply { timeInMillis = account.birthdate * 1000 }
 
             val nextBirthday = Calendar.getInstance().apply {
                 set(Calendar.YEAR, today.get(Calendar.YEAR))
@@ -186,7 +179,8 @@ fun LoggedInView(
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    text = monthFormatter.format(birthDate).replaceFirstChar { it.uppercase() },
+                                    text = monthFormatter.format(birthDate)
+                                        .replaceFirstChar { it.uppercase() },
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -228,6 +222,18 @@ fun LoggedInView(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
+                    onClick = onLogout,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                        brush = SolidColor(MaterialTheme.colorScheme.error)
+                    )
+                ) {
+                    Text(stringResource(R.string.action_logout))
+                }
+                Button(
                     onClick = onEdit,
                     modifier = Modifier.weight(1f)
                 ) {
@@ -238,16 +244,7 @@ fun LoggedInView(
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.action_edit))
                 }
-                Button(
-                    onClick = onLogout,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                ) {
-                    Text(stringResource(R.string.action_logout))
-                }
+
             }
         }
     }
@@ -258,7 +255,8 @@ fun LoggedInView(
 @Composable
 fun LoggedInViewPreview() {
     LapekaTheme {
-        LoggedInView(Account(
+        LoggedInView(
+            Account(
             "id",
             "username",
             "firstname",
@@ -267,13 +265,13 @@ fun LoggedInViewPreview() {
             "img",
             listOf(),
             10,
-            "creationDate",
-            "lastUpdated"
+                Clock.System.now(),
+                Clock.System.now()
         ), {}, {}, {})
     }
 }
 
-        @Composable
+@Composable
 fun NotLoggedInView(onLogin: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -313,7 +311,7 @@ fun NotLoggedInView(onLogin: () -> Unit) {
 
 
 @Composable
-fun CantLogIn(onLogin: () -> Unit){
+fun CantLogIn(onLogin: () -> Unit, onEdit: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
@@ -361,13 +359,21 @@ fun CantLogIn(onLogin: () -> Unit){
         }
 
         Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = onLogin,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Text(stringResource(R.string.error_btn_retry))
+        Row{
+            Button(
+                onClick = onLogin,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Text(stringResource(R.string.error_btn_retry))
+            }
+            Button(
+                onClick = onEdit,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Text("Modifier votre compte")
+            }
         }
     }
 }

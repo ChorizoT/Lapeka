@@ -7,7 +7,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.security.MessageDigest
-import fr.birdywood.lapeka.birdyauth.ensureValidUrl
 
 class ApkDownloader(
     private val context: Context,
@@ -30,7 +29,7 @@ class ApkDownloader(
                 val cacheDir = File(context.cacheDir, "apks").apply { mkdirs() }
                 val outFile = File(cacheDir, fileName)
 
-                val request = Request.Builder().url(ensureValidUrl(url)).build()
+                val request = Request.Builder().url(url).build()
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) {
                         return@withContext Result.Failure("HTTP ${response.code}")

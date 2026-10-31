@@ -1,5 +1,6 @@
 package fr.birdywood.lapeka.ui
 
+import android.app.Activity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -11,20 +12,32 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalFloatingToolbar
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -36,7 +49,34 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import coil.compose.AsyncImagePainter
+import fr.birdywood.lapeka.BuildConfig.IS_FOSS
 import fr.birdywood.lapeka.R
+
+@Composable
+fun ResponsiveNavbar(
+    modifier: Modifier = Modifier,
+    windowSizeClass: WindowSizeClass,
+    accountPainter: Painter?,
+    currentRoute: String?,
+    onClick: (String) -> Unit = {},
+) {
+    when (windowSizeClass.widthSizeClass) {
+        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> {
+            Navbar(
+                modifier,
+                accountPainter,
+                currentRoute,
+                onClick
+            )
+        }
+
+        WindowWidthSizeClass.Expanded -> {
+
+        }
+    }
+}
 
 @Composable
 fun Navbar(
@@ -44,14 +84,15 @@ fun Navbar(
     accountPainter: Painter?,
     currentRoute: String?,
     onClick: (String) -> Unit = {},
-
-    ){
+) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
         HorizontalFloatingToolbar(
             modifier = modifier
                 .offset(y = -ScreenOffset)
-                .border(1.dp,
-                    MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape),
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape
+                ),
             expanded = true,
             content = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -66,7 +107,8 @@ fun Navbar(
                     ToolbarTextIconButton(
                         label = stringResource(R.string.action_account),
                         icon = accountPainter ?: painterResource(R.drawable.rounded_account_24),
-                        selectedIcon = accountPainter ?: painterResource(R.drawable.rounded_account_fill_24),
+                        selectedIcon = accountPainter
+                            ?: painterResource(R.drawable.rounded_account_fill_24),
                         selected = currentRoute == "account",
                         onClick = { onClick("account") },
                         iconModifier = if (accountPainter != null) Modifier
@@ -82,7 +124,6 @@ fun Navbar(
         )
     }
 }
-
 
 
 /**
@@ -107,12 +148,12 @@ fun ToolbarTextIconButton(
     modifier: Modifier = Modifier,
     label: String,
     icon: Painter,
-    selectedIcon : Painter = icon,
+    selectedIcon: Painter = icon,
     onClick: () -> Unit,
     selected: Boolean = false,
     iconModifier: Modifier = Modifier,
     tint: Color? = null,
-){
+) {
     // ── Animated colours ──────────────────────────────────────────────────────
     val containerColor by animateColorAsState(
         targetValue = if (selected)
@@ -174,5 +215,82 @@ fun ToolbarTextIconButton(
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun ExpandedNavbar(
+    viewModel: ListViewModel,
+    windowSizeClass: WindowSizeClass,
+    currentRoute: String,
+    accountPainter: AsyncImagePainter?,
+    goTo: (String) -> Unit,
+    content: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(90f),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (windowSizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+            NavigationRail(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .zIndex(90f),
+                header = {
+                    Icon(
+                        painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = "Menu",
+                        modifier = Modifier
+                            .size(46.dp)
+                    )
+                }
+            ) {
+                ToolbarTextIconButton(
+                    label = stringResource(R.string.action_apps),
+                    icon = painterResource(R.drawable.list_alt_24),
+                    selectedIcon = painterResource(R.drawable.list_alt_fill_24),
+                    selected = currentRoute == "list",
+                    onClick = { goTo("list") }
+                )
+
+                if (!IS_FOSS) {
+                    ToolbarTextIconButton(
+                        label = stringResource(R.string.action_account),
+                        icon = accountPainter ?: painterResource(R.drawable.rounded_account_24),
+                        selectedIcon = accountPainter
+                            ?: painterResource(R.drawable.rounded_account_fill_24),
+                        selected = currentRoute == "account",
+                        onClick = { goTo("account") },
+                        iconModifier = if (accountPainter != null) Modifier
+                            .clip(CircleShape)
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape
+                            ) else Modifier,
+                        tint = if (accountPainter != null) Color.Unspecified else null
+                    )
+                }
+
+                ToolbarTextIconButton(
+                    label = stringResource(R.string.action_share_shortcut),
+                    icon = painterResource(R.drawable.share_24),
+                    selectedIcon = painterResource(R.drawable.share_24),
+                    selected = currentRoute == "share",
+                    onClick = { viewModel.shareLapeka() }
+                )
+
+                ToolbarTextIconButton(
+                    label = stringResource(R.string.action_settings),
+                    icon = painterResource(R.drawable.rounded_settings_24),
+                    selectedIcon = painterResource(R.drawable.rounded_settings_24),
+                    selected = currentRoute == "settings",
+                    onClick = { viewModel.toggleSettings(true) }
+                )
+            }
+        }
+        content()
     }
 }
