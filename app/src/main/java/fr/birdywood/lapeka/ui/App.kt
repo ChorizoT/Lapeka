@@ -40,7 +40,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil.compose.rememberImagePainter
+import coil.compose.rememberAsyncImagePainter
 import fr.birdywood.lapeka.BuildConfig
 import fr.birdywood.lapeka.LapekaApp.Companion.auth
 import fr.birdywood.lapeka.R
@@ -91,7 +91,7 @@ fun App(viewModel: ListViewModel = viewModel()) {
     }
 
     val accountPainter = if (account?.img?.isNotEmpty() == true) {
-        rememberImagePainter(account?.img)
+        rememberAsyncImagePainter(account?.img)
     } else {
         null
     }

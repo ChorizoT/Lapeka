@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -200,11 +205,12 @@ fun ToolbarTextIconButton(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        Icon(
+                        Image(
                             painter = if (selected) selectedIcon else icon,
                             contentDescription = null, // label already describes the action
                             modifier = iconModifier.size(28.dp),
-                            tint = tint ?: contentColor,
+                            contentScale = ContentScale.Crop,
+                            colorFilter = if (tint == null) ColorFilter.tint(contentColor) else if (tint.isSpecified) ColorFilter.tint(tint) else null
                         )
                         Text(
                             text = label,
