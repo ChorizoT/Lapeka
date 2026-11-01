@@ -90,11 +90,8 @@ import java.util.Date
 @Composable
 fun ListScreen(viewModel: ListViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
-    val scope = rememberCoroutineScope()
     val search = uiState.searchQuery
 
-    var hideKeyboard by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val state = rememberLazyStaggeredGridState()
 
@@ -109,7 +106,8 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                     .padding(horizontal = 0.dp)
                     .fillMaxWidth()
                     .horizontalScroll(scrollState)
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 12.dp)
+                    .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
@@ -146,7 +144,7 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
             state = state,
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 14.dp,
+            verticalItemSpacing = 12.dp,
             modifier = Modifier.fillMaxSize()
         ) {
             if (!labs) {

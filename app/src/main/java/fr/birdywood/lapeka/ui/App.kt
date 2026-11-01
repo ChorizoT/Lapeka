@@ -90,7 +90,7 @@ fun App(viewModel: ListViewModel = viewModel()) {
         }
     }
 
-    val accountPainter = if (account?.img?.isNotEmpty() == true) {
+    val accountPainter = if (account?.img?.isNotEmpty() == true && account?.img?.endsWith(".svg") != true) {
         rememberAsyncImagePainter(account?.img)
     } else {
         null
