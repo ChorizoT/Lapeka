@@ -14,8 +14,8 @@ android {
         applicationId = "fr.birdywood.lapeka"
         minSdk = 26
         targetSdk = 37
-        versionCode = 27
-        versionName = "2.3.2"
+        versionCode = 28
+        versionName = "2.3.3"
     }
 
     flavorDimensions += "version"

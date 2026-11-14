@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -138,144 +139,150 @@ fun ListScreen(viewModel: ListViewModel = viewModel()) {
                 Spacer(modifier = Modifier.width(14.dp))
             }
         }
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            // Calculate how many columns fit in the current width
+            val columnCount = maxOf(1, (maxWidth / 320.dp).toInt())
+            val isMultiColumn = columnCount >= 2
 
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
-            state = state,
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 12.dp,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            if (!labs) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Spacer(Modifier.height(12.dp))
-                }
-            }
-
-            if (uiState.isLoadingApps) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Box(
-                        Modifier.fillMaxSize().padding(vertical = 50.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ContainedLoadingIndicator()
-                    }
-                }
-            } else {
-                val itemsFiltered = uiState.apps
-                    .filterApps(uiState.filter)
-                    .filter {
-                        it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(
-                            search
-                        )
-                    }
-                if (itemsFiltered.isEmpty()) {
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
+                state = state,
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalItemSpacing = 12.dp,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (!labs) {
                     item(span = StaggeredGridItemSpan.FullLine) {
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+
+                if (uiState.isLoadingApps) {
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Box(
+                            Modifier.fillMaxSize().padding(vertical = 50.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ContainedLoadingIndicator()
+                        }
+                    }
+                } else {
+                    val itemsFiltered = uiState.apps
+                        .filterApps(uiState.filter)
+                        .filter {
+                            it.remote.packageName.includeSearch(search) || it.remote.name.includeSearch(
+                                search
+                            )
+                        }
+                    if (itemsFiltered.isEmpty()) {
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                border = if (uiState.showFeaturedApps) {
+                                    BorderStroke(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.surfaceContainerHighest
+                                    )
+                                } else {
+                                    null
+                                },
+                                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                            ) {
+                                Column(
+                                    Modifier
+                                        .padding(16.dp)
+                                        .padding(vertical = 100.dp).fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            painterResource(R.drawable.planet_24),
+                                            modifier = Modifier.size(72.dp),
+                                            tint = MaterialTheme.colorScheme.tertiary,
+                                            contentDescription = null
+                                        )
+
+                                        Spacer(modifier = Modifier.height(32.dp))
+
+                                        Text(
+                                            stringResource(R.string.text_no_matching_app),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(onClick = { viewModel.toggleSettings(true) }) {
+                                            Text(
+                                                stringResource(R.string.action_configure)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        items(
+                            itemsFiltered,
+                            key = { it.remote.id }
+                        ) { app ->
+                            AppCard(
+                                app = app,
+                                isMultiColumn = isMultiColumn,
+                                onAction = { viewModel.addToQueue(app) },
+                                onCancel = { viewModel.removeToQueue(app) })
+                        }
+                    }
+
+                }
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        search == "" && uiState.filter == FilterSelect.DEFAULT && uiState.showFeaturedApps && !uiState.isLoadingFeaturedApps && uiState.featuredApps.isNotEmpty(),
+                        enter = slideInVertically(initialOffsetY = { -it }) + expandVertically(),
+                        exit = slideOutVertically(targetOffsetY = { -it }) + shrinkVertically()
+                    ) {
                         Card(
                             shape = RoundedCornerShape(20.dp),
-                            modifier = Modifier
-                                .fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            border = if (uiState.showFeaturedApps) {
-                                BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.surfaceContainerHighest
-                                )
-                            } else {
-                                null
-                            },
-                            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.surfaceContainerHighest
+                            ),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
                         ) {
-                            Column(
-                                Modifier
-                                    .padding(16.dp)
-                                    .padding(vertical = 100.dp).fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        painterResource(R.drawable.planet_24),
-                                        modifier = Modifier.size(72.dp),
-                                        tint = MaterialTheme.colorScheme.tertiary,
-                                        contentDescription = null
-                                    )
-
-                                    Spacer(modifier = Modifier.height(32.dp))
-
-                                    Text(
-                                        stringResource(R.string.text_no_matching_app),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Button(onClick = { viewModel.toggleSettings(true) }) {
-                                        Text(
-                                            stringResource(R.string.action_configure)
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    stringResource(R.string.featured_apps),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                FeaturedAppsCarouselSection(uiState.featuredApps) { id ->
+                                    val app = uiState.featuredApps.find { it.id == id }
+                                    if (app != null) {
+                                        val intent = CustomTabsIntent.Builder().build()
+                                        intent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        intent.launchUrl(
+                                            context,
+                                            "https://vps.birdywood.fr/project/${app.id}".toUri()
                                         )
                                     }
                                 }
                             }
                         }
                     }
-                } else {
-                    items(
-                        itemsFiltered,
-                        key = { it.remote.id }
-                    ) { app ->
-                        AppCard(
-                            app = app,
-                            onAction = { viewModel.addToQueue(app) },
-                            onCancel = { viewModel.removeToQueue(app) })
-                    }
                 }
-
-            }
-            item(span = StaggeredGridItemSpan.FullLine) {
-                AnimatedVisibility(
-                    search == "" && uiState.filter == FilterSelect.DEFAULT && uiState.showFeaturedApps && !uiState.isLoadingFeaturedApps && uiState.featuredApps.isNotEmpty(),
-                    enter = slideInVertically(initialOffsetY = { -it }) + expandVertically(),
-                    exit = slideOutVertically(targetOffsetY = { -it }) + shrinkVertically()
-                ) {
-                    Card(
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.surfaceContainerHighest
-                        ),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(
-                                stringResource(R.string.featured_apps),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            FeaturedAppsCarouselSection(uiState.featuredApps) { id ->
-                                val app = uiState.featuredApps.find { it.id == id }
-                                if (app != null) {
-                                    val intent = CustomTabsIntent.Builder().build()
-                                    intent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    intent.launchUrl(
-                                        context,
-                                        "https://vps.birdywood.fr/project/${app.id}".toUri()
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            item(span = StaggeredGridItemSpan.FullLine) {
-                Spacer(
-                    Modifier.padding(
-                        WindowInsets.navigationBars.asPaddingValues()
-                            .plus(PaddingValues(top = 100.dp))
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(
+                        Modifier.padding(
+                            WindowInsets.navigationBars.asPaddingValues()
+                                .plus(PaddingValues(top = 100.dp))
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -349,7 +356,7 @@ fun OfflineState(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun AppCard(app: TrackedApp, onAction: () -> Unit, onCancel: () -> Unit) {
+private fun AppCard(app: TrackedApp, isMultiColumn: Boolean, onAction: () -> Unit, onCancel: () -> Unit) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val appCond =
         app.status is AppStatus.Downloading || app.status is AppStatus.Installing || app.status is AppStatus.Queued
@@ -435,7 +442,12 @@ private fun AppCard(app: TrackedApp, onAction: () -> Unit, onCancel: () -> Unit)
             Text(
                 app.remote.desc,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                minLines = if (isMultiColumn) 2 else 1,
+                maxLines = if (expanded) Int.MAX_VALUE else 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .animateContentSize()
             )
 
             /*AnimatedVisibility(visible = app.status == AppStatus.DOWNLOADING || app.status == AppStatus.INSTALLING) {
